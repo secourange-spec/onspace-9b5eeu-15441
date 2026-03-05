@@ -101,88 +101,16 @@ export const usersService = {
     }
   },
 
-  // Get all users (admin only) with pagination
-  async getAllUsers(options?: {
-    limit?: number;
-    offset?: number;
-    search?: string;
-    role?: 'all' | 'admin' | 'user';
-    vipOnly?: boolean;
-  }): Promise<{ data: UserProfile[] | null; error: string | null; count?: number }> {
-    try {
-      const limit = options?.limit || 50; // Default: 50 utilisateurs
-      const offset = options?.offset || 0;
-      
-      let query = supabase
-        .from('user_profiles')
-        .select('*', { count: 'exact' })
-        .order('created_at', { ascending: false });
-      
-      // Filtre par recherche (email ou username)
-      if (options?.search) {
-        query = query.or(`email.ilike.%${options.search}%,username.ilike.%${options.search}%`);
-      }
-      
-      // Filtre par rôle
-      if (options?.role && options.role !== 'all') {
-        query = query.eq('role', options.role);
-      }
-      
-      // Filtre VIP uniquement
-      if (options?.vipOnly) {
-        query = query.eq('vip_status', true);
-      }
-      
-      // Pagination
-      query = query.range(offset, offset + limit - 1);
-      
-      const { data, error, count } = await query;
-      
-      if (error) throw error;
-      return { data, error: null, count: count || 0 };
-    } catch (error: any) {
-      return { data: null, error: error.message, count: 0 };
-    }
-  },
-
-  // Get recent users (derniers inscrits)
-  async getRecentUsers(limit: number = 10): Promise<{ data: UserProfile[] | null; error: string | null }> {
+  // Get all users (admin only)
+  async getAllUsers(): Promise<{ data: UserProfile[] | null; error: string | null }> {
     try {
       const { data, error } = await supabase
         .from('user_profiles')
         .select('*')
-        .order('created_at', { ascending: false })
-        .limit(limit);
+        .order('created_at', { ascending: false });
       
       if (error) throw error;
       return { data, error: null };
-    } catch (error: any) {
-      return { data: null, error: error.message };
-    }
-  },
-
-  // Get user stats
-  async getUserStats(): Promise<{
-    data: { total: number; vip: number; free: number; admins: number; banned: number } | null;
-    error: string | null;
-  }> {
-    try {
-      const { data, error } = await supabase
-        .from('user_profiles')
-        .select('role, vip_status, banned');
-      
-      if (error) throw error;
-      if (!data) return { data: null, error: null };
-      
-      const stats = {
-        total: data.length,
-        vip: data.filter(u => u.vip_status).length,
-        free: data.filter(u => !u.vip_status).length,
-        admins: data.filter(u => u.role === 'admin').length,
-        banned: data.filter(u => u.banned).length,
-      };
-      
-      return { data: stats, error: null };
     } catch (error: any) {
       return { data: null, error: error.message };
     }
