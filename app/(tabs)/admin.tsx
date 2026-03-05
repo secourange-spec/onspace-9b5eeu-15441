@@ -31,6 +31,12 @@ export default function AdminScreen() {
 
   const [activeTab, setActiveTab] = useState<'predictions' | 'users' | 'stats' | 'history' | 'notifications'>('predictions');
   const [users, setUsers] = useState<UserProfile[]>([]);
+  const [userSearch, setUserSearch] = useState('');
+  const [userFilter, setUserFilter] = useState<'all' | 'admin' | 'user' | 'vip'>('all');
+  const [userPage, setUserPage] = useState(0);
+  const [totalUsers, setTotalUsers] = useState(0);
+  const [hasMoreUsers, setHasMoreUsers] = useState(true);
+  const USERS_PER_PAGE = 20;
   const [predictions, setPredictions] = useState<Prediction[]>([]);
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -77,13 +83,39 @@ export default function AdminScreen() {
   const sections = newPrediction.category === 'free' ? freeSections : vipSections;
 
   // Load data
-  const loadUsers = async () => {
-    const { data, error } = await usersService.getAllUsers();
+  const loadUsers = async (page: number = 0, append: boolean = false) => {
+    const { data, error, count } = await usersService.getAllUsers({
+      limit: USERS_PER_PAGE,
+      offset: page * USERS_PER_PAGE,
+      search: userSearch || undefined,
+      role: userFilter === 'vip' ? undefined : (userFilter as 'all' | 'admin' | 'user'),
+      vipOnly: userFilter === 'vip',
+    });
+    
     if (error) {
       showAlert('Erreur', error);
     } else if (data) {
-      setUsers(data);
+      if (append) {
+        setUsers(prev => [...prev, ...data]);
+      } else {
+        setUsers(data);
+      }
+      setTotalUsers(count || 0);
+      setHasMoreUsers(data.length === USERS_PER_PAGE);
     }
+  };
+
+  const loadMoreUsers = () => {
+    if (hasMoreUsers) {
+      const nextPage = userPage + 1;
+      setUserPage(nextPage);
+      loadUsers(nextPage, true);
+    }
+  };
+
+  const refreshUsers = () => {
+    setUserPage(0);
+    loadUsers(0, false);
   };
 
   const loadPredictions = async () => {
@@ -115,12 +147,19 @@ export default function AdminScreen() {
 
   useEffect(() => {
     if (isAdmin) {
-      loadUsers();
+      refreshUsers();
       loadPredictions();
       if (activeTab === 'history') loadHistory();
       if (activeTab === 'notifications') loadNotifications();
     }
   }, [isAdmin, activeTab]);
+
+  // Rafraîchir les utilisateurs quand les filtres changent
+  useEffect(() => {
+    if (isAdmin && activeTab === 'users') {
+      refreshUsers();
+    }
+  }, [userSearch, userFilter]);
 
   // Create prediction
   const handleCreatePrediction = async () => {
@@ -247,7 +286,7 @@ export default function AdminScreen() {
       showAlert('Erreur', error);
     } else {
       showAlert('Succès', isVip ? 'Utilisateur passé VIP' : 'VIP révoqué');
-      loadUsers();
+      refreshUsers();
       setShowUserModal(false);
     }
   };
@@ -259,7 +298,7 @@ export default function AdminScreen() {
       showAlert('Erreur', error);
     } else {
       showAlert('Succès', ban ? 'Utilisateur banni' : 'Ban révoqué');
-      loadUsers();
+      refreshUsers();
       setShowUserModal(false);
     }
   };
@@ -474,6 +513,64 @@ export default function AdminScreen() {
         {/* Users Tab */}
         {activeTab === 'users' && (
           <View>
+            {/* Barre de recherche et filtres */}
+            <View style={styles.searchContainer}>
+              <View style={styles.searchInputContainer}>
+                <MaterialIcons name="search" size={20} color={theme.colors.textMuted} />
+                <TextInput
+                  style={styles.searchInput}
+                  placeholder="Rechercher par email..."
+                  placeholderTextColor={theme.colors.textMuted}
+                  value={userSearch}
+                  onChangeText={setUserSearch}
+                />
+                {userSearch ? (
+                  <Pressable onPress={() => setUserSearch('')}>
+                    <MaterialIcons name="close" size={20} color={theme.colors.textMuted} />
+                  </Pressable>
+                ) : null}
+              </View>
+            </View>
+
+            {/* Filtres */}
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.filterContainer}
+              contentContainerStyle={styles.filterContent}
+            >
+              <Pressable
+                style={[styles.filterChip, userFilter === 'all' && styles.filterChipActive]}
+                onPress={() => setUserFilter('all')}
+              >
+                <Text style={[styles.filterChipText, userFilter === 'all' && styles.filterChipTextActive]}>Tous</Text>
+              </Pressable>
+              <Pressable
+                style={[styles.filterChip, userFilter === 'vip' && styles.filterChipActive]}
+                onPress={() => setUserFilter('vip')}
+              >
+                <Text style={[styles.filterChipText, userFilter === 'vip' && styles.filterChipTextActive]}>VIP</Text>
+              </Pressable>
+              <Pressable
+                style={[styles.filterChip, userFilter === 'admin' && styles.filterChipActive]}
+                onPress={() => setUserFilter('admin')}
+              >
+                <Text style={[styles.filterChipText, userFilter === 'admin' && styles.filterChipTextActive]}>Admins</Text>
+              </Pressable>
+              <Pressable
+                style={[styles.filterChip, userFilter === 'user' && styles.filterChipActive]}
+                onPress={() => setUserFilter('user')}
+              >
+                <Text style={[styles.filterChipText, userFilter === 'user' && styles.filterChipTextActive]}>Utilisateurs</Text>
+              </Pressable>
+            </ScrollView>
+
+            {/* Compteur */}
+            <Text style={styles.userCount}>
+              {totalUsers} utilisateur{totalUsers > 1 ? 's' : ''} au total · Page {userPage + 1}
+            </Text>
+
+            {/* Liste des utilisateurs */}
             {users.map((user) => (
               <Pressable
                 key={user.id}
@@ -506,6 +603,27 @@ export default function AdminScreen() {
                 </View>
               </Pressable>
             ))}
+
+            {/* Bouton Charger plus */}
+            {hasMoreUsers && (
+              <Pressable style={styles.loadMoreButton} onPress={loadMoreUsers}>
+                <MaterialIcons name="expand-more" size={20} color={theme.colors.primary} />
+                <Text style={styles.loadMoreText}>Charger plus d'utilisateurs</Text>
+              </Pressable>
+            )}
+
+            {/* Message fin de liste */}
+            {!hasMoreUsers && users.length > 0 && (
+              <Text style={styles.endOfListText}>Tous les utilisateurs ont été chargés</Text>
+            )}
+
+            {/* Message liste vide */}
+            {users.length === 0 && (
+              <View style={styles.emptyContainer}>
+                <MaterialIcons name="person-off" size={48} color={theme.colors.textMuted} />
+                <Text style={styles.emptyText}>Aucun utilisateur trouvé</Text>
+              </View>
+            )}
           </View>
         )}
 
@@ -1436,5 +1554,83 @@ const styles = StyleSheet.create({
     fontSize: theme.fontSize.md,
     fontWeight: theme.fontWeight.bold,
     color: '#fff',
+  },
+  searchContainer: {
+    marginBottom: theme.spacing.md,
+  },
+  searchInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.borderRadius.md,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
+    gap: theme.spacing.sm,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: theme.fontSize.md,
+    color: theme.colors.textPrimary,
+    includeFontPadding: false,
+  },
+  filterContainer: {
+    maxHeight: 48,
+    marginBottom: theme.spacing.sm,
+  },
+  filterContent: {
+    gap: 8,
+    paddingVertical: 4,
+  },
+  filterChip: {
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.xs,
+    borderRadius: theme.borderRadius.full,
+    backgroundColor: theme.colors.surface,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  filterChipActive: {
+    backgroundColor: theme.colors.primary,
+    borderColor: theme.colors.primary,
+  },
+  filterChipText: {
+    fontSize: theme.fontSize.sm,
+    fontWeight: theme.fontWeight.semibold,
+    color: theme.colors.textMuted,
+  },
+  filterChipTextActive: {
+    color: '#000',
+  },
+  userCount: {
+    fontSize: theme.fontSize.xs,
+    color: theme.colors.textMuted,
+    marginBottom: theme.spacing.sm,
+    fontWeight: theme.fontWeight.medium,
+  },
+  loadMoreButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.borderRadius.md,
+    padding: theme.spacing.md,
+    marginTop: theme.spacing.sm,
+    gap: theme.spacing.xs,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  loadMoreText: {
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.primary,
+    fontWeight: theme.fontWeight.semibold,
+  },
+  endOfListText: {
+    fontSize: theme.fontSize.xs,
+    color: theme.colors.textMuted,
+    textAlign: 'center',
+    marginTop: theme.spacing.md,
+    fontStyle: 'italic',
   },
 });
