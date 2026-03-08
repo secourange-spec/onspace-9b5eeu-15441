@@ -18,7 +18,7 @@ export default function NotificationsScreen() {
   const loadNotifications = async () => {
     const { data, error } = await notificationsService.getUserNotifications();
     if (error) {
-      showAlert('Erreur', error);
+      showAlert('Error', error);
     } else if (data) {
       setNotifications(data);
     }
@@ -45,7 +45,7 @@ export default function NotificationsScreen() {
   const handleMarkAllAsRead = async () => {
     const { error } = await notificationsService.markAllAsRead();
     if (error) {
-      showAlert('Erreur', error);
+      showAlert('Error', error);
     } else {
       setNotifications(notifications.map(n => ({ ...n, read: true })));
     }
@@ -78,13 +78,13 @@ export default function NotificationsScreen() {
         <View>
           <Text style={styles.title}>Notifications</Text>
           {unreadCount > 0 && (
-            <Text style={styles.subtitle}>{unreadCount} non lue(s)</Text>
+            <Text style={styles.subtitle}>{unreadCount} unread</Text>
           )}
         </View>
         {unreadCount > 0 && (
           <Pressable style={styles.markAllButton} onPress={handleMarkAllAsRead}>
             <MaterialIcons name="done-all" size={20} color={theme.colors.primary} />
-            <Text style={styles.markAllText}>Tout marquer</Text>
+            <Text style={styles.markAllText}>Mark all</Text>
           </Pressable>
         )}
       </View>
@@ -101,13 +101,13 @@ export default function NotificationsScreen() {
         {loading ? (
           <View style={styles.emptyContainer}>
             <MaterialIcons name="hourglass-empty" size={48} color={theme.colors.textMuted} />
-            <Text style={styles.emptyText}>Chargement...</Text>
+            <Text style={styles.emptyText}>Loading...</Text>
           </View>
         ) : notifications.length === 0 ? (
           <View style={styles.emptyContainer}>
             <MaterialIcons name="notifications-none" size={48} color={theme.colors.textMuted} />
-            <Text style={styles.emptyText}>Aucune notification</Text>
-            <Text style={styles.emptySubtext}>Vous serez notifié des nouveaux pronostics</Text>
+            <Text style={styles.emptyText}>No notifications</Text>
+            <Text style={styles.emptySubtext}>You will be notified of new predictions</Text>
           </View>
         ) : (
           notifications.map((notification) => (
@@ -129,7 +129,7 @@ export default function NotificationsScreen() {
                   {notification.message}
                 </Text>
                 <Text style={styles.notificationDate}>
-                  {new Date(notification.created_at).toLocaleDateString('fr-FR', {
+                  {new Date(notification.created_at).toLocaleDateString('en-US', {
                     day: '2-digit',
                     month: 'short',
                     hour: '2-digit',

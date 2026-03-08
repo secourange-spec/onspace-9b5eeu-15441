@@ -22,7 +22,7 @@ export default function ProfileScreen() {
   };
 
   const vipExpireDate = profile?.vip_expire_date
-    ? new Date(profile.vip_expire_date).toLocaleDateString('fr-FR', {
+    ? new Date(profile.vip_expire_date).toLocaleDateString('en-US', {
         day: '2-digit',
         month: 'long',
         year: 'numeric',
@@ -45,14 +45,14 @@ export default function ProfileScreen() {
           <MaterialIcons name="person" size={48} color={isVip ? '#000' : theme.colors.textPrimary} />
         </View>
         <Text style={[styles.username, isVip && styles.usernameVip]}>
-          {profile?.username || profile?.email.split('@')[0] || 'Utilisateur'}
+          {profile?.username || profile?.email.split('@')[0] || 'User'}
         </Text>
         <Text style={[styles.email, isVip && styles.emailVip]}>{profile?.email}</Text>
         <View style={styles.badgeContainer}>
           <VipBadge isVip={isVip} size="large" />
         </View>
         {isVip && vipExpireDate && (
-          <Text style={styles.vipExpire}>Expire le {vipExpireDate}</Text>
+          <Text style={styles.vipExpire}>Expires on {vipExpireDate}</Text>
         )}
       </LinearGradient>
 
@@ -69,7 +69,7 @@ export default function ProfileScreen() {
             style={styles.upgradeGradient}
           >
             <MaterialIcons name="workspace-premium" size={24} color="#000" />
-            <Text style={styles.upgradeText}>Passer au VIP</Text>
+            <Text style={styles.upgradeText}>Upgrade to VIP</Text>
             <MaterialIcons name="arrow-forward" size={20} color="#000" />
           </LinearGradient>
         </Pressable>
@@ -77,7 +77,7 @@ export default function ProfileScreen() {
 
       {/* Links Section */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Liens</Text>
+        <Text style={styles.sectionTitle}>Links</Text>
         
         <Pressable
           style={styles.linkCard}
@@ -87,8 +87,8 @@ export default function ProfileScreen() {
             <MaterialIcons name="support-agent" size={24} color={theme.colors.info} />
           </View>
           <View style={styles.linkContent}>
-            <Text style={styles.linkTitle}>Contacter l'Admin</Text>
-            <Text style={styles.linkSubtitle}>Support & souscription VIP</Text>
+            <Text style={styles.linkTitle}>Contact Admin</Text>
+            <Text style={styles.linkSubtitle}>Support & VIP subscription</Text>
           </View>
           <MaterialIcons name="open-in-new" size={20} color={theme.colors.textMuted} />
         </Pressable>
@@ -101,8 +101,8 @@ export default function ProfileScreen() {
             <MaterialIcons name="groups" size={24} color={theme.colors.primary} />
           </View>
           <View style={styles.linkContent}>
-            <Text style={styles.linkTitle}>Canal Officiel</Text>
-            <Text style={styles.linkSubtitle}>Rejoindre la communauté</Text>
+            <Text style={styles.linkTitle}>Official Channel</Text>
+            <Text style={styles.linkSubtitle}>Join the community</Text>
           </View>
           <MaterialIcons name="open-in-new" size={20} color={theme.colors.textMuted} />
         </Pressable>
@@ -110,11 +110,11 @@ export default function ProfileScreen() {
 
       {/* Account Section */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Compte</Text>
+        <Text style={styles.sectionTitle}>Account</Text>
         
         <View style={styles.infoCard}>
           <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Statut</Text>
+            <Text style={styles.infoLabel}>Status</Text>
             <VipBadge isVip={isVip} size="small" />
           </View>
           <View style={styles.infoRow}>
@@ -122,10 +122,10 @@ export default function ProfileScreen() {
             <Text style={styles.infoValue} numberOfLines={1}>{profile?.email}</Text>
           </View>
           <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Membre depuis</Text>
+            <Text style={styles.infoLabel}>Member since</Text>
             <Text style={styles.infoValue}>
               {profile?.created_at
-                ? new Date(profile.created_at).toLocaleDateString('fr-FR', {
+                ? new Date(profile.created_at).toLocaleDateString('en-US', {
                     month: 'long',
                     year: 'numeric',
                   })
@@ -141,7 +141,7 @@ export default function ProfileScreen() {
         onPress={handleLogout}
       >
         <MaterialIcons name="logout" size={20} color={theme.colors.error} />
-        <Text style={styles.logoutText}>Déconnexion</Text>
+        <Text style={styles.logoutText}>Logout</Text>
       </Pressable>
     </ScrollView>
   );

@@ -1,6 +1,4 @@
 // MODDESS TIPS - Login/Register Screen
-
-const ONBOARDING_KEY = '@moddess_onboarding_complete';
 import React, { useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { View, Text, TextInput, StyleSheet, Pressable, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
@@ -10,6 +8,8 @@ import { theme } from '@/constants/theme';
 import { APP_CONFIG } from '@/constants/config';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+const ONBOARDING_KEY = '@moddess_onboarding_complete';
 
 export default function AuthScreen() {
   const { signInWithPassword, signUpWithPassword, sendOTP, verifyOTPAndLogin, operationLoading } = useAuth();
@@ -134,7 +134,7 @@ export default function AuthScreen() {
               <MaterialIcons name="email" size={20} color={theme.colors.textMuted} />
               <TextInput
                 style={styles.input}
-                placeholder="votre@email.com"
+                placeholder="your@email.com"
                 placeholderTextColor={theme.colors.textMuted}
                 value={email}
                 onChangeText={setEmail}
@@ -147,7 +147,7 @@ export default function AuthScreen() {
 
           {/* Password Input */}
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Mot de passe</Text>
+            <Text style={styles.label}>Password</Text>
             <View style={styles.inputContainer}>
               <MaterialIcons name="lock" size={20} color={theme.colors.textMuted} />
               <TextInput

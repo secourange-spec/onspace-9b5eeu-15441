@@ -19,7 +19,7 @@ export default function VipHtFtScreen() {
   const loadPredictions = async () => {
     const { data, error } = await predictionsService.getPredictionsBySection('ht_ft_vip');
     if (error) {
-      showAlert('Erreur', error);
+      showAlert('Error', error);
     } else if (data) {
       setPredictions(data);
     }
@@ -59,13 +59,13 @@ export default function VipHtFtScreen() {
           {loading ? (
             <View style={styles.emptyContainer}>
               <MaterialIcons name="hourglass-empty" size={48} color={theme.colors.textMuted} />
-              <Text style={styles.emptyText}>Chargement...</Text>
+              <Text style={styles.emptyText}>Loading...</Text>
             </View>
           ) : predictions.length === 0 ? (
             <View style={styles.emptyContainer}>
               <MaterialIcons name="inbox" size={48} color={theme.colors.textMuted} />
-              <Text style={styles.emptyText}>Aucun pronostic disponible</Text>
-              <Text style={styles.emptySubtext}>Revenez plus tard pour de nouveaux pronostics VIP</Text>
+              <Text style={styles.emptyText}>No predictions available</Text>
+              <Text style={styles.emptySubtext}>Check back later for new VIP predictions</Text>
             </View>
           ) : (
             predictions.map((prediction) => (
