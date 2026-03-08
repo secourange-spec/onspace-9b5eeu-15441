@@ -1,4 +1,4 @@
-// MODDESS TIPS - Root Index with Onboarding Check
+// MODDESS TIPS - Root Index (FIXED)
 import React, { useState, useEffect } from 'react';
 import { AuthRouter } from '@/template';
 import { Redirect, useRouter } from 'expo-router';
@@ -14,12 +14,7 @@ export default function RootScreen() {
 
   useEffect(() => {
     checkOnboarding();
-    
-    // Show splash for 3 seconds
-    const timer = setTimeout(() => {
-      setShowSplash(false);
-    }, 3000);
-
+    const timer = setTimeout(() => setShowSplash(false), 3000);
     return () => clearTimeout(timer);
   }, []);
 
@@ -27,7 +22,7 @@ export default function RootScreen() {
     try {
       const value = await AsyncStorage.getItem(ONBOARDING_KEY);
       setOnboardingComplete(value === 'true');
-    } catch (error) {
+    } catch {
       setOnboardingComplete(false);
     }
   };
@@ -38,21 +33,12 @@ export default function RootScreen() {
     }
   }, [showSplash, onboardingComplete]);
 
-  if (showSplash) {
-    return <SplashScreen />;
-  }
-
-  if (onboardingComplete === null) {
-    return null; // Loading
-  }
-
-  if (onboardingComplete === false) {
-    return null; // Will navigate to onboarding
-  }
+  if (showSplash) return <SplashScreen />;
+  if (onboardingComplete === null || onboardingComplete === false) return null;
 
   return (
     <AuthRouter loginRoute="/login">
-      <Redirect href="/(tabs)/free" />
+      <Redirect href="/(tabs)" />
     </AuthRouter>
   );
 }
