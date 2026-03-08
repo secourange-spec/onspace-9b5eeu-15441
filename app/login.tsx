@@ -34,39 +34,9 @@ export default function AuthScreen() {
       return;
     }
 
-    console.log('[Login] Attempting login with email:', email);
-    
-    try {
-      const { error, user } = await signInWithPassword(email, password);
-      
-      console.log('[Login] Response:', { error: error || 'none', hasUser: !!user });
-      
-      if (error) {
-        console.error('[Login] Login failed:', error);
-        
-        // Show user-friendly error messages
-        if (error.includes('Invalid login credentials') || error.includes('invalid')) {
-          showAlert(
-            'Login Failed',
-            'Incorrect email or password. Please check your credentials and try again.'
-          );
-        } else {
-          showAlert('Login Failed', error);
-        }
-        return;
-      }
-      
-      if (!user) {
-        console.error('[Login] No user returned despite no error');
-        showAlert('Error', 'Login failed. Please try again.');
-        return;
-      }
-      
-      console.log('[Login] ✅ Login successful for:', user.email);
-      // AuthRouter will handle navigation automatically
-    } catch (err: any) {
-      console.error('[Login] Exception during login:', err);
-      showAlert('Error', err.message || 'An unexpected error occurred');
+    const { error } = await signInWithPassword(email, password);
+    if (error) {
+      showAlert('Login Error', error);
     }
   };
 
@@ -102,26 +72,9 @@ export default function AuthScreen() {
       return;
     }
 
-    console.log('[Login] Verifying OTP for:', email);
-    
-    try {
-      const { error, user } = await verifyOTPAndLogin(email, otp, { password });
-      
-      if (error) {
-        console.error('[Login] OTP verification failed:', error);
-        showAlert('Verification Failed', error);
-        return;
-      }
-      
-      if (!user) {
-        showAlert('Error', 'Verification failed. Please try again.');
-        return;
-      }
-      
-      console.log('[Login] ✅ OTP verified and user created');
-    } catch (err: any) {
-      console.error('[Login] Exception during OTP verification:', err);
-      showAlert('Error', err.message || 'An unexpected error occurred');
+    const { error } = await verifyOTPAndLogin(email, otp, { password });
+    if (error) {
+      showAlert('Error', error);
     }
   };
 

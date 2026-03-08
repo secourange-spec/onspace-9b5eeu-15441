@@ -1,9 +1,8 @@
-// MODDESS TIPS - History Screen (Par catégories)
-import React, { useState } from 'react';
+// MODDESS TIPS - History Screen (English)
+import React from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { theme } from '@/constants/theme';
-import { APP_CONFIG } from '@/constants/config';
 import { useUser } from '@/hooks/useUser';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -16,13 +15,13 @@ export default function HistoryScreen() {
   const freeCategories = [
     {
       id: 'cote_2_free',
-      title: 'Côte 2',
+      title: 'Odds 2',
       icon: 'emoji-events',
       color: '#3B82F6',
     },
     {
       id: 'accumulation_free',
-      title: 'Accumulation',
+      title: 'Accumulator',
       icon: 'layers',
       color: '#8B5CF6',
     },
@@ -31,19 +30,19 @@ export default function HistoryScreen() {
   const vipCategories = [
     {
       id: 'cote_2_vip',
-      title: 'Côte 2 VIP',
+      title: 'Odds 2 VIP',
       icon: 'stars',
       color: '#F59E0B',
     },
     {
       id: 'cote_5_vip',
-      title: 'Côte 5 VIP',
+      title: 'Odds 5 VIP',
       icon: 'workspace-premium',
       color: '#EF4444',
     },
     {
       id: 'score_exact_vip',
-      title: 'Score Exact',
+      title: 'Correct Score',
       icon: 'scoreboard',
       color: '#8B5CF6',
     },
@@ -60,22 +59,22 @@ export default function HistoryScreen() {
       {/* Header */}
       <View style={styles.header}>
         <View>
-          <Text style={styles.title}>Historique</Text>
-          <Text style={styles.subtitle}>Résultats des pronostics terminés</Text>
+          <Text style={styles.title}>History</Text>
+          <Text style={styles.subtitle}>Past prediction results</Text>
         </View>
         <MaterialIcons name="history" size={24} color={theme.colors.primary} />
       </View>
 
       <ScrollView
         style={styles.content}
-        contentContainerStyle={styles.contentContainer}
+        contentContainerStyle={[styles.contentContainer, { paddingBottom: insets.bottom + 20 }]}
         showsVerticalScrollIndicator={false}
       >
         {/* Free Section */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <MaterialIcons name="lock-open" size={20} color={theme.colors.success} />
-            <Text style={styles.sectionTitle}>Catégories Free</Text>
+            <Text style={styles.sectionTitle}>Free Categories</Text>
           </View>
           {freeCategories.map((category) => (
             <Pressable
@@ -95,14 +94,14 @@ export default function HistoryScreen() {
           ))}
         </View>
 
-        {/* VIP Section - Accessible à tous pour motiver les abonnements */}
+        {/* VIP Section - Accessible to all to motivate subscriptions */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <MaterialIcons name="workspace-premium" size={20} color={theme.colors.primary} />
-            <Text style={styles.sectionTitle}>Catégories VIP</Text>
+            <Text style={styles.sectionTitle}>VIP Categories</Text>
             {!isVip && (
               <View style={styles.motivationBadge}>
-                <Text style={styles.motivationText}>Voir les résultats passés</Text>
+                <Text style={styles.motivationText}>View past results</Text>
               </View>
             )}
           </View>

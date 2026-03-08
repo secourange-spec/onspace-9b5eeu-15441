@@ -1,9 +1,8 @@
-// MODDESS TIPS - Free Categories
+// MODDESS TIPS - Free Categories (English)
 import React from 'react';
 import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { theme } from '@/constants/theme';
-import { APP_CONFIG } from '@/constants/config';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -15,16 +14,16 @@ export default function FreeScreen() {
   const categories = [
     {
       id: 'cote_2_free',
-      title: 'Côte 2',
-      description: 'Pronostics avec côte autour de 2.00',
+      title: 'Odds 2',
+      description: 'Predictions with odds around 2.00',
       icon: 'emoji-events',
       route: '/(tabs)/free-cote2',
       color: '#3B82F6',
     },
     {
       id: 'accumulation_free',
-      title: 'Accumulation',
-      description: 'Paris combinés à fortes côtes',
+      title: 'Accumulator',
+      description: 'Combined bets with high odds',
       icon: 'layers',
       route: '/(tabs)/free-accumulation',
       color: '#8B5CF6',
@@ -36,8 +35,8 @@ export default function FreeScreen() {
       {/* Header */}
       <View style={styles.header}>
         <View>
-          <Text style={styles.title}>Pronostics Free</Text>
-          <Text style={styles.subtitle}>Accès gratuit pour tous</Text>
+          <Text style={styles.title}>Free Predictions</Text>
+          <Text style={styles.subtitle}>Free access for everyone</Text>
         </View>
         <View style={styles.freeBadge}>
           <MaterialIcons name="lock-open" size={20} color={theme.colors.success} />
@@ -47,10 +46,10 @@ export default function FreeScreen() {
 
       <ScrollView
         style={styles.content}
-        contentContainerStyle={styles.contentContainer}
+        contentContainerStyle={[styles.contentContainer, { paddingBottom: insets.bottom + 20 }]}
         showsVerticalScrollIndicator={false}
       >
-        {categories.map((category, index) => (
+        {categories.map((category) => (
           <Pressable
             key={category.id}
             style={({ pressed }) => [
@@ -81,14 +80,14 @@ export default function FreeScreen() {
             end={{ x: 1, y: 1 }}
             style={styles.upgradeGradient}
           >
-            <MaterialIcons name="workspace-premium" size={48} color="#000" />
-            <Text style={styles.upgradeTitle}>Passer au VIP</Text>
+            <MaterialIcons name="workspace-premium" size={48} color="#FFF" />
+            <Text style={styles.upgradeTitle}>Upgrade to VIP</Text>
             <Text style={styles.upgradeDescription}>
-              Débloquez 4 catégories VIP exclusives avec des pronostics premium
+              Unlock 4 exclusive VIP categories with premium predictions
             </Text>
             <View style={styles.upgradeButton}>
-              <Text style={styles.upgradeButtonText}>Voir les offres</Text>
-              <MaterialIcons name="arrow-forward" size={18} color="#000" />
+              <Text style={styles.upgradeButtonText}>View Plans</Text>
+              <MaterialIcons name="arrow-forward" size={18} color="#FFF" />
             </View>
           </LinearGradient>
         </Pressable>
@@ -191,29 +190,31 @@ const styles = StyleSheet.create({
   upgradeTitle: {
     fontSize: theme.fontSize.xl,
     fontWeight: theme.fontWeight.bold,
-    color: '#000',
+    color: '#FFF',
     marginTop: theme.spacing.sm,
     marginBottom: theme.spacing.xs,
   },
   upgradeDescription: {
     fontSize: theme.fontSize.sm,
-    color: '#000',
-    opacity: 0.8,
+    color: '#FFF',
+    opacity: 0.95,
     textAlign: 'center',
     marginBottom: theme.spacing.md,
   },
   upgradeButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#000',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
     paddingHorizontal: theme.spacing.md,
     paddingVertical: theme.spacing.sm,
     borderRadius: theme.borderRadius.full,
     gap: 4,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
   },
   upgradeButtonText: {
     fontSize: theme.fontSize.sm,
     fontWeight: theme.fontWeight.bold,
-    color: theme.colors.primary,
+    color: '#FFF',
   },
 });
