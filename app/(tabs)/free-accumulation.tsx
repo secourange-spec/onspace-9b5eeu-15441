@@ -19,7 +19,7 @@ export default function FreeAccumulationScreen() {
   const loadPredictions = async () => {
     const { data, error } = await predictionsService.getPredictionsBySection('accumulation_free');
     if (error) {
-      showAlert('Error', error);
+      showAlert('Erreur', error);
     } else if (data) {
       setPredictions(data);
     }
@@ -41,7 +41,7 @@ export default function FreeAccumulationScreen() {
       <Stack.Screen
         options={{
           headerShown: true,
-          headerTitle: 'Accumulator - Free',
+          headerTitle: 'Accumulation - Free',
           headerStyle: { backgroundColor: theme.colors.surface },
           headerTintColor: theme.colors.textPrimary,
           headerShadowVisible: true,
@@ -59,13 +59,13 @@ export default function FreeAccumulationScreen() {
           {loading ? (
             <View style={styles.emptyContainer}>
               <MaterialIcons name="hourglass-empty" size={48} color={theme.colors.textMuted} />
-              <Text style={styles.emptyText}>Loading...</Text>
+              <Text style={styles.emptyText}>Chargement...</Text>
             </View>
           ) : predictions.length === 0 ? (
             <View style={styles.emptyContainer}>
               <MaterialIcons name="inbox" size={48} color={theme.colors.textMuted} />
-              <Text style={styles.emptyText}>No predictions available</Text>
-              <Text style={styles.emptySubtext}>Check back later for new predictions</Text>
+              <Text style={styles.emptyText}>Aucun pronostic disponible</Text>
+              <Text style={styles.emptySubtext}>Revenez plus tard pour de nouveaux pronostics</Text>
             </View>
           ) : (
             predictions.map((prediction) => (

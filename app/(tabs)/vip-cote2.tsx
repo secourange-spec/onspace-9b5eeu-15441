@@ -19,7 +19,7 @@ export default function VipCote2Screen() {
   const loadPredictions = async () => {
     const { data, error } = await predictionsService.getPredictionsBySection('cote_2_vip');
     if (error) {
-      showAlert('Error', error);
+      showAlert('Erreur', error);
     } else if (data) {
       setPredictions(data);
     }
@@ -41,7 +41,7 @@ export default function VipCote2Screen() {
       <Stack.Screen
         options={{
           headerShown: true,
-          headerTitle: 'Odds 2 - VIP',
+          headerTitle: 'Côte 2 - VIP',
           headerStyle: { backgroundColor: theme.colors.primary },
           headerTintColor: '#000',
           headerShadowVisible: true,
@@ -59,13 +59,13 @@ export default function VipCote2Screen() {
           {loading ? (
             <View style={styles.emptyContainer}>
               <MaterialIcons name="hourglass-empty" size={48} color={theme.colors.textMuted} />
-              <Text style={styles.emptyText}>Loading...</Text>
+              <Text style={styles.emptyText}>Chargement...</Text>
             </View>
           ) : predictions.length === 0 ? (
             <View style={styles.emptyContainer}>
               <MaterialIcons name="inbox" size={48} color={theme.colors.textMuted} />
-              <Text style={styles.emptyText}>No predictions available</Text>
-              <Text style={styles.emptySubtext}>Check back later for new VIP predictions</Text>
+              <Text style={styles.emptyText}>Aucun pronostic disponible</Text>
+              <Text style={styles.emptySubtext}>Revenez plus tard pour de nouveaux pronostics VIP</Text>
             </View>
           ) : (
             predictions.map((prediction) => (

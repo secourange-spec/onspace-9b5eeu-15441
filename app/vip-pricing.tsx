@@ -12,7 +12,7 @@ export default function VipPricingScreen() {
 
   const handlePricingPress = (planId: string, duration: string, price: number) => {
     const message = encodeURIComponent(
-      `Hello leader, I am here for a VIP subscription to the ${duration} plan ($${price})`
+      `Salutation leader, je suis là pour une souscription à l'offre VIP ${duration} (${price}$)`
     );
     Linking.openURL(`${APP_CONFIG.telegram.admin}?text=${message}`);
   };
@@ -29,20 +29,20 @@ export default function VipPricingScreen() {
         >
           <MaterialIcons name="workspace-premium" size={48} color="#000" />
         </LinearGradient>
-        <Text style={styles.title}>Become VIP</Text>
-        <Text style={styles.subtitle}>Access premium predictions and maximize your earnings</Text>
+        <Text style={styles.title}>Devenir VIP</Text>
+        <Text style={styles.subtitle}>Accédez aux pronostics premium et maximisez vos gains</Text>
       </View>
 
       {/* Features */}
       <View style={styles.features}>
-        <Text style={styles.featuresTitle}>VIP Benefits</Text>
+        <Text style={styles.featuresTitle}>Avantages VIP</Text>
         {[
-          { icon: 'stars', text: 'Odds 2 VIP - Safe predictions' },
-          { icon: 'workspace-premium', text: 'Odds 5 VIP - High returns' },
-          { icon: 'bullseye', text: 'Correct Score - Maximum precision' },
-          { icon: 'schedule', text: 'HT/FT - Double opportunity' },
-          { icon: 'trending-up', text: 'Daily expert advice' },
-          { icon: 'support-agent', text: 'Priority support' },
+          { icon: 'stars', text: 'Côte 2 VIP - Pronostics sûrs' },
+          { icon: 'workspace-premium', text: 'Côte 5 VIP - Gains élevés' },
+          { icon: 'bullseye', text: 'Score Exact - Précision maximale' },
+          { icon: 'schedule', text: 'HT/FT - Double opportunité' },
+          { icon: 'trending-up', text: 'Conseils experts quotidiens' },
+          { icon: 'support-agent', text: 'Support prioritaire' },
         ].map((feature, index) => (
           <View key={index} style={styles.featureItem}>
             <View style={styles.featureIcon}>
@@ -67,18 +67,18 @@ export default function VipPricingScreen() {
           >
             {plan.popular && (
               <View style={styles.popularBadge}>
-                <Text style={styles.popularText}>POPULAR</Text>
+                <Text style={styles.popularText}>POPULAIRE</Text>
               </View>
             )}
             <Text style={styles.pricingDuration}>{plan.duration}</Text>
             <View style={styles.pricingPriceContainer}>
               <Text style={styles.pricingPrice}>{plan.price}$</Text>
               <Text style={styles.pricingPerDay}>
-                {(plan.price / plan.days).toFixed(2)}$/day
+                {(plan.price / plan.days).toFixed(2)}$/jour
               </Text>
             </View>
             <View style={styles.pricingButton}>
-              <Text style={styles.pricingButtonText}>Subscribe</Text>
+              <Text style={styles.pricingButtonText}>Souscrire</Text>
               <MaterialIcons name="arrow-forward" size={18} color="#000" />
             </View>
           </Pressable>
@@ -89,7 +89,7 @@ export default function VipPricingScreen() {
       <View style={styles.info}>
         <MaterialIcons name="info-outline" size={20} color={theme.colors.info} />
         <Text style={styles.infoText}>
-          Click on a plan to contact the admin on Telegram and complete your subscription
+          Cliquez sur un tarif pour contacter l'admin sur Telegram et finaliser votre souscription
         </Text>
       </View>
     </ScrollView>

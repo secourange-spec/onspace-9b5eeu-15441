@@ -56,21 +56,21 @@ export const APP_CONFIG = {
     lost: { label: 'Lost', color: '#EF4444' },
   },
   
-  // Onboarding screens
+  // Onboarding
   onboarding: [
     {
       title: 'Premium Predictions',
-      description: 'Get access to exclusive VIP predictions with high success rates and professional analysis',
+      description: 'Get access to exclusive VIP predictions with high success rates',
       image: require('@/assets/images/onboarding-1.png'),
     },
     {
       title: 'Real-Time Updates',
-      description: 'Receive instant push notifications for new predictions, results, and important updates',
+      description: 'Receive instant push notifications for new predictions and results',
       image: require('@/assets/images/onboarding-2.png'),
     },
     {
-      title: 'Join & Win Together',
-      description: 'Start winning today with our community of professional sports betting enthusiasts',
+      title: 'Join & Win',
+      description: 'Start winning today with our professional sports betting tips',
       image: require('@/assets/images/onboarding-3.png'),
     },
   ],
