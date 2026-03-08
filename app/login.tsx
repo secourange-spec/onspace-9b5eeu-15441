@@ -34,9 +34,29 @@ export default function AuthScreen() {
       return;
     }
 
-    const { error } = await signInWithPassword(email, password);
-    if (error) {
-      showAlert('Login Error', error);
+    console.log('[Login] Attempting login with email:', email);
+    
+    try {
+      const { error, user } = await signInWithPassword(email, password);
+      
+      console.log('[Login] Response:', { error: error || 'none', hasUser: !!user });
+      
+      if (error) {
+        console.error('[Login] Login failed:', error);
+        showAlert('Login Failed', error);
+        return;
+      }
+      
+      if (!user) {
+        console.error('[Login] No user returned despite no error');
+        showAlert('Error', 'Login failed. Please try again.');
+        return;
+      }
+      
+      console.log('[Login] ✅ Login successful for:', user.email);
+    } catch (err: any) {
+      console.error('[Login] Exception during login:', err);
+      showAlert('Error', err.message || 'An unexpected error occurred');
     }
   };
 
@@ -72,9 +92,26 @@ export default function AuthScreen() {
       return;
     }
 
-    const { error } = await verifyOTPAndLogin(email, otp, { password });
-    if (error) {
-      showAlert('Error', error);
+    console.log('[Login] Verifying OTP for:', email);
+    
+    try {
+      const { error, user } = await verifyOTPAndLogin(email, otp, { password });
+      
+      if (error) {
+        console.error('[Login] OTP verification failed:', error);
+        showAlert('Verification Failed', error);
+        return;
+      }
+      
+      if (!user) {
+        showAlert('Error', 'Verification failed. Please try again.');
+        return;
+      }
+      
+      console.log('[Login] ✅ OTP verified and user created');
+    } catch (err: any) {
+      console.error('[Login] Exception during OTP verification:', err);
+      showAlert('Error', err.message || 'An unexpected error occurred');
     }
   };
 
