@@ -5,10 +5,27 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Image } from 'expo-image';
 import { MaterialIcons } from '@expo/vector-icons';
 import { theme } from '@/constants/theme';
-import { APP_CONFIG } from '@/constants/config';
 import { useRouter } from 'expo-router';
 
 const { width, height } = Dimensions.get('window');
+
+const ONBOARDING_DATA = [
+  {
+    image: require('../assets/images/onboarding-1.png'),
+    title: 'VIP Predictions',
+    description: 'Access exclusive high-value predictions with premium analysis and expert insights',
+  },
+  {
+    image: require('../assets/images/onboarding-2.png'),
+    title: 'Real-Time Updates',
+    description: 'Get instant notifications for new predictions and live match updates',
+  },
+  {
+    image: require('../assets/images/onboarding-3.png'),
+    title: 'Win Big',
+    description: 'Join thousands of winning members and maximize your betting success',
+  },
+];
 
 export default function OnboardingScreen() {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -16,7 +33,7 @@ export default function OnboardingScreen() {
   const router = useRouter();
 
   const handleNext = () => {
-    if (currentIndex < APP_CONFIG.onboarding.length - 1) {
+    if (currentIndex < ONBOARDING_DATA.length - 1) {
       const nextIndex = currentIndex + 1;
       setCurrentIndex(nextIndex);
       scrollViewRef.current?.scrollTo({ x: nextIndex * width, animated: true });
@@ -45,7 +62,7 @@ export default function OnboardingScreen() {
         scrollEnabled={false}
         style={styles.scrollView}
       >
-        {APP_CONFIG.onboarding.map((item, index) => (
+        {ONBOARDING_DATA.map((item, index) => (
           <View key={index} style={styles.slide}>
             <Image
               source={item.image}
@@ -63,7 +80,7 @@ export default function OnboardingScreen() {
 
       {/* Pagination Dots */}
       <View style={styles.pagination}>
-        {APP_CONFIG.onboarding.map((_, index) => (
+        {ONBOARDING_DATA.map((_, index) => (
           <View
             key={index}
             style={[
@@ -89,7 +106,7 @@ export default function OnboardingScreen() {
           style={styles.buttonGradient}
         >
           <Text style={styles.buttonText}>
-            {currentIndex === APP_CONFIG.onboarding.length - 1 ? 'Get Started' : 'Next'}
+            {currentIndex === ONBOARDING_DATA.length - 1 ? 'Get Started' : 'Next'}
           </Text>
           <MaterialIcons name="arrow-forward" size={20} color="#FFF" />
         </LinearGradient>

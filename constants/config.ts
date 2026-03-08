@@ -1,77 +1,34 @@
-// MODDESS TIPS - App Configuration
-
+// MODDESS TIPS - Application Configuration
 export const APP_CONFIG = {
   appName: 'MODDESS TIPS',
-  tagline: 'Professional Sports Predictions',
+  version: '2.0.0',
   
-  // Telegram links
   telegram: {
-    admin: 'https://t.me/servant12r',
-    channel: 'https://t.me/+EBiGK5As8NQ1MjI0',
+    admin: 'https://t.me/moddess_admin',
+    channel: 'https://t.me/moddess_tips',
   },
   
-  // VIP pricing - UPDATED PRICES
   vipPricing: [
     {
-      id: '1week',
+      id: 'week',
       duration: '1 Week',
       price: 25,
       days: 7,
       popular: false,
     },
     {
-      id: '1month',
+      id: 'month',
       duration: '1 Month',
       price: 45,
       days: 30,
       popular: true,
     },
     {
-      id: '1year',
+      id: 'year',
       duration: '1 Year',
       price: 80,
       days: 365,
       popular: false,
     },
   ],
-  
-  // Prediction sections
-  sections: {
-    free: [
-      { id: 'cote_2_free', label: 'Odds 2', icon: 'emoji-events' },
-      { id: 'accumulation_free', label: 'Accumulator', icon: 'layers' },
-    ],
-    vip: [
-      { id: 'cote_2_vip', label: 'Odds 2 VIP', icon: 'stars' },
-      { id: 'cote_5_vip', label: 'Odds 5 VIP', icon: 'workspace-premium' },
-      { id: 'score_exact_vip', label: 'Correct Score', icon: 'bullseye' },
-      { id: 'ht_ft_vip', label: 'HT/FT', icon: 'schedule' },
-    ],
-  },
-  
-  // Status labels
-  status: {
-    pending: { label: 'Pending', color: '#3B82F6' },
-    won: { label: 'Won', color: '#10B981' },
-    lost: { label: 'Lost', color: '#EF4444' },
-  },
-  
-  // Onboarding screens
-  onboarding: [
-    {
-      title: 'Premium Predictions',
-      description: 'Get access to exclusive VIP predictions with high success rates and professional analysis',
-      image: require('@/assets/images/onboarding-1.png'),
-    },
-    {
-      title: 'Real-Time Updates',
-      description: 'Receive instant push notifications for new predictions, results, and important updates',
-      image: require('@/assets/images/onboarding-2.png'),
-    },
-    {
-      title: 'Join & Win Together',
-      description: 'Start winning today with our community of professional sports betting enthusiasts',
-      image: require('@/assets/images/onboarding-3.png'),
-    },
-  ],
-};
+} as const;
