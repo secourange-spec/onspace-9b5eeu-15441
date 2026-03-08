@@ -23,7 +23,7 @@ export default function HistoryDetailScreen() {
     if (!section) return;
     const { data, error } = await predictionsService.getHistoryBySection(section, filter);
     if (error) {
-      showAlert('Erreur', error);
+      showAlert('Error', error);
     } else if (data) {
       setHistory(data);
     }
@@ -54,6 +54,7 @@ export default function HistoryDetailScreen() {
           headerTitle: sectionTitle,
           headerStyle: { backgroundColor: theme.colors.surface },
           headerTintColor: theme.colors.textPrimary,
+          headerBackTitleVisible: false,
         }}
       />
       <View style={[styles.container, { paddingTop: 0 }]}>
@@ -62,17 +63,17 @@ export default function HistoryDetailScreen() {
           <View style={styles.statCard}>
             <MaterialIcons name="bar-chart" size={24} color={theme.colors.primary} />
             <Text style={styles.statValue}>{winRate}%</Text>
-            <Text style={styles.statLabel}>Réussite</Text>
+            <Text style={styles.statLabel}>Success</Text>
           </View>
           <View style={styles.statCard}>
             <MaterialIcons name="check-circle" size={24} color={theme.colors.success} />
             <Text style={styles.statValue}>{wonCount}</Text>
-            <Text style={styles.statLabel}>Gagnés</Text>
+            <Text style={styles.statLabel}>Won</Text>
           </View>
           <View style={styles.statCard}>
             <MaterialIcons name="cancel" size={24} color={theme.colors.error} />
             <Text style={styles.statValue}>{lostCount}</Text>
-            <Text style={styles.statLabel}>Perdus</Text>
+            <Text style={styles.statLabel}>Lost</Text>
           </View>
         </View>
 
@@ -82,21 +83,21 @@ export default function HistoryDetailScreen() {
             style={[styles.filterChip, filter === 'all' && styles.filterChipActive]}
             onPress={() => setFilter('all')}
           >
-            <Text style={[styles.filterText, filter === 'all' && styles.filterTextActive]}>Tous</Text>
+            <Text style={[styles.filterText, filter === 'all' && styles.filterTextActive]}>All</Text>
           </Pressable>
           <Pressable
             style={[styles.filterChip, filter === 'won' && styles.filterChipActive]}
             onPress={() => setFilter('won')}
           >
             <MaterialIcons name="check-circle" size={16} color={filter === 'won' ? '#000' : theme.colors.textMuted} />
-            <Text style={[styles.filterText, filter === 'won' && styles.filterTextActive]}>Gagnés</Text>
+            <Text style={[styles.filterText, filter === 'won' && styles.filterTextActive]}>Won</Text>
           </Pressable>
           <Pressable
             style={[styles.filterChip, filter === 'lost' && styles.filterChipActive]}
             onPress={() => setFilter('lost')}
           >
             <MaterialIcons name="cancel" size={16} color={filter === 'lost' ? '#000' : theme.colors.textMuted} />
-            <Text style={[styles.filterText, filter === 'lost' && styles.filterTextActive]}>Perdus</Text>
+            <Text style={[styles.filterText, filter === 'lost' && styles.filterTextActive]}>Lost</Text>
           </Pressable>
         </View>
 
@@ -112,12 +113,12 @@ export default function HistoryDetailScreen() {
           {loading ? (
             <View style={styles.emptyContainer}>
               <MaterialIcons name="hourglass-empty" size={48} color={theme.colors.textMuted} />
-              <Text style={styles.emptyText}>Chargement...</Text>
+              <Text style={styles.emptyText}>Loading...</Text>
             </View>
           ) : history.length === 0 ? (
             <View style={styles.emptyContainer}>
               <MaterialIcons name="history" size={48} color={theme.colors.textMuted} />
-              <Text style={styles.emptyText}>Aucun historique</Text>
+              <Text style={styles.emptyText}>No history</Text>
             </View>
           ) : (
             history.map((entry) => (
