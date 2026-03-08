@@ -1,17 +1,19 @@
-// MODDESS TIPS - Free Côte 2 Category
+// MODDESS TIPS - Free Odds 2 Category (With Back Button)
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, RefreshControl, Pressable } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { theme } from '@/constants/theme';
 import { PredictionCard } from '@/components';
 import { predictionsService, Prediction } from '@/services/predictions';
 import { useAlert } from '@/template';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Stack } from 'expo-router';
+import { useRouter } from 'expo-router';
 
 export default function FreeCote2Screen() {
   const { showAlert } = useAlert();
   const insets = useSafeAreaInsets();
+  const router = useRouter();
+  
   const [predictions, setPredictions] = useState<Prediction[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -37,45 +39,47 @@ export default function FreeCote2Screen() {
   };
 
   return (
-    <>
-      <Stack.Screen
-        options={{
-          headerShown: true,
-          headerTitle: 'Odds 2 - Free',
-          headerBackTitleVisible: false,
-          headerStyle: { backgroundColor: theme.colors.surface },
-          headerTintColor: theme.colors.textPrimary,
-          headerShadowVisible: true,
-        }}
-      />
-      <View style={[styles.container, { paddingTop: 0 }]}>
-        <ScrollView
-          style={styles.content}
-          contentContainerStyle={[styles.contentContainer, { paddingBottom: insets.bottom + 20 }]}
-          showsVerticalScrollIndicator={false}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} />
-          }
-        >
-          {loading ? (
-            <View style={styles.emptyContainer}>
-              <MaterialIcons name="hourglass-empty" size={48} color={theme.colors.textMuted} />
-              <Text style={styles.emptyText}>Loading...</Text>
-            </View>
-          ) : predictions.length === 0 ? (
-            <View style={styles.emptyContainer}>
-              <MaterialIcons name="inbox" size={48} color={theme.colors.textMuted} />
-              <Text style={styles.emptyText}>No predictions available</Text>
-              <Text style={styles.emptySubtext}>Check back later for new predictions</Text>
-            </View>
-          ) : (
-            predictions.map((prediction) => (
-              <PredictionCard key={prediction.id} prediction={prediction} />
-            ))
-          )}
-        </ScrollView>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
+      {/* Header with Back Button */}
+      <View style={styles.header}>
+        <Pressable style={styles.backButton} onPress={() => router.back()}>
+          <MaterialIcons name="arrow-back" size={24} color={theme.colors.textPrimary} />
+        </Pressable>
+        <View style={styles.headerContent}>
+          <Text style={styles.title}>Odds 2 - Free</Text>
+          <Text style={styles.subtitle}>Safe predictions ~2.00</Text>
+        </View>
+        <View style={styles.headerRight}>
+          <MaterialIcons name="verified" size={24} color={theme.colors.success} />
+        </View>
       </View>
-    </>
+
+      <ScrollView
+        style={styles.content}
+        contentContainerStyle={[styles.contentContainer, { paddingBottom: insets.bottom + 20 }]}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} />
+        }
+      >
+        {loading ? (
+          <View style={styles.emptyContainer}>
+            <MaterialIcons name="hourglass-empty" size={48} color={theme.colors.textMuted} />
+            <Text style={styles.emptyText}>Loading...</Text>
+          </View>
+        ) : predictions.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <MaterialIcons name="inbox" size={48} color={theme.colors.textMuted} />
+            <Text style={styles.emptyText}>No predictions available</Text>
+            <Text style={styles.emptySubtext}>Check back later for new predictions</Text>
+          </View>
+        ) : (
+          predictions.map((prediction) => (
+            <PredictionCard key={prediction.id} prediction={prediction} isVip={false} />
+          ))
+        )}
+      </ScrollView>
+    </View>
   );
 }
 
@@ -83,6 +87,40 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: theme.colors.background,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: theme.colors.surface,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+    ...theme.shadows.small,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: theme.borderRadius.md,
+    backgroundColor: theme.colors.surfaceLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: theme.spacing.sm,
+  },
+  headerContent: {
+    flex: 1,
+  },
+  title: {
+    fontSize: theme.fontSize.lg,
+    fontWeight: theme.fontWeight.bold,
+    color: theme.colors.textPrimary,
+  },
+  subtitle: {
+    fontSize: theme.fontSize.xs,
+    color: theme.colors.textMuted,
+  },
+  headerRight: {
+    marginLeft: theme.spacing.sm,
   },
   content: {
     flex: 1,

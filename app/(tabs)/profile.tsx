@@ -1,4 +1,4 @@
-// MODDESS TIPS - Profile Screen
+// MODDESS TIPS - Profile Screen (FIXED)
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable, Linking } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -12,7 +12,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 
 export default function ProfileScreen() {
-  const { profile, isVip } = useUser();
+  const { profile, isVip, loading } = useUser();
   const { logout } = useAuth();
   const insets = useSafeAreaInsets();
   const router = useRouter();
@@ -28,6 +28,16 @@ export default function ProfileScreen() {
         year: 'numeric',
       })
     : null;
+
+  // Loading state
+  if (loading || !profile) {
+    return (
+      <View style={[styles.container, { paddingTop: insets.top, justifyContent: 'center', alignItems: 'center' }]}>
+        <MaterialIcons name="hourglass-empty" size={48} color={theme.colors.textMuted} />
+        <Text style={styles.loadingText}>Loading profile...</Text>
+      </View>
+    );
+  }
 
   return (
     <ScrollView
@@ -45,9 +55,9 @@ export default function ProfileScreen() {
           <MaterialIcons name="person" size={48} color={isVip ? '#000' : theme.colors.textPrimary} />
         </View>
         <Text style={[styles.username, isVip && styles.usernameVip]}>
-          {profile?.username || profile?.email.split('@')[0] || 'User'}
+          {profile.username || profile.email.split('@')[0] || 'User'}
         </Text>
-        <Text style={[styles.email, isVip && styles.emailVip]}>{profile?.email}</Text>
+        <Text style={[styles.email, isVip && styles.emailVip]}>{profile.email}</Text>
         <View style={styles.badgeContainer}>
           <VipBadge isVip={isVip} size="large" />
         </View>
@@ -119,12 +129,12 @@ export default function ProfileScreen() {
           </View>
           <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>Email</Text>
-            <Text style={styles.infoValue} numberOfLines={1}>{profile?.email}</Text>
+            <Text style={styles.infoValue} numberOfLines={1}>{profile.email}</Text>
           </View>
           <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>Member since</Text>
             <Text style={styles.infoValue}>
-              {profile?.created_at
+              {profile.created_at
                 ? new Date(profile.created_at).toLocaleDateString('en-US', {
                     month: 'long',
                     year: 'numeric',
@@ -155,6 +165,11 @@ const styles = StyleSheet.create({
   content: {
     padding: theme.spacing.md,
     gap: theme.spacing.md,
+  },
+  loadingText: {
+    fontSize: theme.fontSize.md,
+    color: theme.colors.textMuted,
+    marginTop: theme.spacing.sm,
   },
   profileCard: {
     borderRadius: theme.borderRadius.xl,

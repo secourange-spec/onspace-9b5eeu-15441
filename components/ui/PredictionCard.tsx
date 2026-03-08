@@ -1,4 +1,4 @@
-// MODDESS TIPS - Enhanced Prediction Card
+// MODDESS TIPS - Enhanced Professional Prediction Card
 import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -40,6 +40,7 @@ export default function PredictionCard({ prediction, isVip = false, onPress }: P
       ]}
       onPress={onPress}
     >
+      {/* VIP Top Border */}
       {isVip && (
         <LinearGradient
           colors={[theme.colors.vipGradientStart, theme.colors.vipGradientEnd]}
@@ -60,64 +61,90 @@ export default function PredictionCard({ prediction, isVip = false, onPress }: P
               </View>
             )}
           </View>
-          <View style={[styles.statusBadge, { backgroundColor: statusColors[prediction.status] }]}>
-            <MaterialIcons name={statusIcons[prediction.status] as any} size={14} color="#FFF" />
-            <Text style={styles.statusText}>{statusLabels[prediction.status]}</Text>
+          
+          {/* VIP Badge + Status */}
+          <View style={styles.headerRight}>
+            {isVip && (
+              <View style={styles.vipBadge}>
+                <MaterialIcons name="workspace-premium" size={12} color="#000" />
+                <Text style={styles.vipBadgeText}>VIP</Text>
+              </View>
+            )}
+            <View style={[styles.statusBadge, { backgroundColor: statusColors[prediction.status] }]}>
+              <MaterialIcons name={statusIcons[prediction.status] as any} size={14} color="#FFF" />
+              <Text style={styles.statusText}>{statusLabels[prediction.status]}</Text>
+            </View>
           </View>
         </View>
 
         {/* Match */}
         <Text style={styles.match}>{prediction.match}</Text>
 
-        {/* Prediction Details */}
-        <View style={styles.details}>
-          <View style={styles.detailRow}>
-            <MaterialIcons name="sports-soccer" size={16} color={theme.colors.primary} />
-            <Text style={styles.detailLabel}>Bet:</Text>
-            <Text style={styles.detailValue}>{prediction.bet}</Text>
+        {/* Prediction Details Grid */}
+        <View style={styles.detailsGrid}>
+          <View style={styles.detailCard}>
+            <MaterialIcons name="sports-soccer" size={20} color={theme.colors.primary} />
+            <View style={styles.detailCardContent}>
+              <Text style={styles.detailCardLabel}>BET</Text>
+              <Text style={styles.detailCardValue} numberOfLines={2}>{prediction.bet}</Text>
+            </View>
           </View>
 
-          <View style={styles.detailRow}>
-            <MaterialIcons name="trending-up" size={16} color={theme.colors.success} />
-            <Text style={styles.detailLabel}>Odds:</Text>
-            <Text style={[styles.detailValue, styles.odds]}>{prediction.odds}</Text>
+          <View style={styles.detailCard}>
+            <MaterialIcons name="trending-up" size={20} color={theme.colors.success} />
+            <View style={styles.detailCardContent}>
+              <Text style={styles.detailCardLabel}>ODDS</Text>
+              <Text style={[styles.detailCardValue, styles.oddsValue]}>{prediction.odds}</Text>
+            </View>
           </View>
         </View>
 
-        {/* Success Rate */}
+        {/* Success Rate Bar */}
         {prediction.success_rate && (
-          <View style={styles.successRate}>
+          <View style={styles.successRateContainer}>
+            <View style={styles.successRateHeader}>
+              <Text style={styles.successRateLabel}>Success Rate</Text>
+              <Text style={styles.successRatePercent}>{prediction.success_rate}%</Text>
+            </View>
             <View style={styles.successRateBar}>
-              <View
-                style={[
-                  styles.successRateFill,
-                  { width: `${prediction.success_rate}%`, backgroundColor: theme.colors.success },
-                ]}
+              <LinearGradient
+                colors={[theme.colors.success, theme.colors.primary]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={[styles.successRateFill, { width: `${prediction.success_rate}%` }]}
               />
             </View>
-            <Text style={styles.successRateText}>{prediction.success_rate}% Success Rate</Text>
           </View>
         )}
 
-        {/* Date */}
-        {prediction.match_date && (
-          <View style={styles.footer}>
-            <MaterialIcons name="access-time" size={14} color={theme.colors.textMuted} />
-            <Text style={styles.date}>
-              {new Date(prediction.match_date).toLocaleDateString('en-US', {
-                month: 'short',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit',
-              })}
-            </Text>
-          </View>
-        )}
+        {/* Footer */}
+        <View style={styles.footer}>
+          {prediction.match_date && (
+            <View style={styles.footerItem}>
+              <MaterialIcons name="access-time" size={14} color={theme.colors.textMuted} />
+              <Text style={styles.footerText}>
+                {new Date(prediction.match_date).toLocaleDateString('en-US', {
+                  month: 'short',
+                  day: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })}
+              </Text>
+            </View>
+          )}
+          
+          {prediction.confidence && (
+            <View style={styles.footerItem}>
+              <MaterialIcons name="star" size={14} color={theme.colors.warning} />
+              <Text style={styles.footerText}>{prediction.confidence}</Text>
+            </View>
+          )}
+        </View>
 
         {/* Advice */}
         {prediction.advice && (
           <View style={styles.adviceContainer}>
-            <MaterialIcons name="lightbulb" size={14} color={theme.colors.warning} />
+            <MaterialIcons name="lightbulb-outline" size={16} color={theme.colors.warning} />
             <Text style={styles.advice} numberOfLines={2}>{prediction.advice}</Text>
           </View>
         )}
@@ -129,12 +156,12 @@ export default function PredictionCard({ prediction, isVip = false, onPress }: P
 const styles = StyleSheet.create({
   container: {
     backgroundColor: theme.colors.surface,
-    borderRadius: theme.borderRadius.lg,
+    borderRadius: theme.borderRadius.xl,
     marginBottom: theme.spacing.md,
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: theme.colors.border,
-    ...theme.shadows.small,
+    ...theme.shadows.medium,
   },
   containerVip: {
     borderWidth: 0,
@@ -153,11 +180,16 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     marginBottom: theme.spacing.sm,
+    gap: theme.spacing.xs,
   },
   headerLeft: {
     flex: 1,
+  },
+  headerRight: {
+    flexDirection: 'row',
+    gap: 6,
   },
   championshipBadge: {
     flexDirection: 'row',
@@ -175,10 +207,24 @@ const styles = StyleSheet.create({
     color: theme.colors.primary,
     textTransform: 'uppercase',
   },
+  vipBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: theme.borderRadius.sm,
+    backgroundColor: theme.colors.primary,
+    gap: 3,
+  },
+  vipBadgeText: {
+    fontSize: theme.fontSize.xs,
+    fontWeight: theme.fontWeight.bold,
+    color: '#000',
+  },
   statusBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: theme.spacing.sm,
+    paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: theme.borderRadius.sm,
     gap: 4,
@@ -192,57 +238,82 @@ const styles = StyleSheet.create({
     fontSize: theme.fontSize.lg,
     fontWeight: theme.fontWeight.bold,
     color: theme.colors.textPrimary,
+    marginBottom: theme.spacing.md,
+    lineHeight: 24,
+  },
+  detailsGrid: {
+    flexDirection: 'row',
+    gap: theme.spacing.sm,
     marginBottom: theme.spacing.sm,
   },
-  details: {
-    gap: theme.spacing.xs,
-    marginBottom: theme.spacing.sm,
-  },
-  detailRow: {
+  detailCard: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    backgroundColor: theme.colors.surfaceLight,
+    borderRadius: theme.borderRadius.md,
+    padding: theme.spacing.sm,
+    gap: theme.spacing.xs,
   },
-  detailLabel: {
-    fontSize: theme.fontSize.sm,
-    color: theme.colors.textSecondary,
-    fontWeight: theme.fontWeight.medium,
+  detailCardContent: {
+    flex: 1,
   },
-  detailValue: {
+  detailCardLabel: {
+    fontSize: theme.fontSize.xs,
+    color: theme.colors.textMuted,
+    fontWeight: theme.fontWeight.semibold,
+    marginBottom: 2,
+  },
+  detailCardValue: {
     fontSize: theme.fontSize.sm,
     color: theme.colors.textPrimary,
-    fontWeight: theme.fontWeight.semibold,
+    fontWeight: theme.fontWeight.bold,
   },
-  odds: {
+  oddsValue: {
     color: theme.colors.success,
     fontSize: theme.fontSize.md,
   },
-  successRate: {
+  successRateContainer: {
     marginBottom: theme.spacing.sm,
   },
+  successRateHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  successRateLabel: {
+    fontSize: theme.fontSize.xs,
+    color: theme.colors.textMuted,
+    fontWeight: theme.fontWeight.semibold,
+  },
+  successRatePercent: {
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.success,
+    fontWeight: theme.fontWeight.bold,
+  },
   successRateBar: {
-    height: 6,
+    height: 8,
     backgroundColor: theme.colors.surfaceLight,
     borderRadius: theme.borderRadius.sm,
     overflow: 'hidden',
-    marginBottom: 4,
   },
   successRateFill: {
     height: '100%',
     borderRadius: theme.borderRadius.sm,
   },
-  successRateText: {
-    fontSize: theme.fontSize.xs,
-    color: theme.colors.textMuted,
-    fontWeight: theme.fontWeight.medium,
-  },
   footer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: theme.spacing.md,
     marginBottom: theme.spacing.xs,
   },
-  date: {
+  footerItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  footerText: {
     fontSize: theme.fontSize.xs,
     color: theme.colors.textMuted,
   },
@@ -251,14 +322,17 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     backgroundColor: theme.colors.surfaceLight,
     padding: theme.spacing.sm,
-    borderRadius: theme.borderRadius.sm,
+    borderRadius: theme.borderRadius.md,
     gap: 6,
     marginTop: theme.spacing.xs,
+    borderLeftWidth: 3,
+    borderLeftColor: theme.colors.warning,
   },
   advice: {
     flex: 1,
     fontSize: theme.fontSize.sm,
     color: theme.colors.textSecondary,
     fontStyle: 'italic',
+    lineHeight: 18,
   },
 });
