@@ -1,11 +1,11 @@
 // MODDESS TIPS - Professional Animated Splash Screen
 import React, { useEffect, useRef } from 'react';
-import { View, StyleSheet, Animated, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, Animated, Dimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Image } from 'expo-image';
 import { theme } from '@/constants/theme';
 
-const { width, height } = Dimensions.get('window');
+const { width } = Dimensions.get('window');
 
 export default function SplashScreen() {
   // Animation values
@@ -92,7 +92,7 @@ export default function SplashScreen() {
           ]}
         >
           <Image
-            source={require('@/assets/images/logo.png')}
+            source={require('../../../assets/images/logo.png')}
             style={styles.logo}
             contentFit="contain"
             transition={200}
@@ -106,14 +106,6 @@ export default function SplashScreen() {
               styles.textWrapper,
               {
                 opacity: mergeAnim,
-                transform: [
-                  {
-                    translateX: Animated.add(leftTextAnim, rightTextAnim).interpolate({
-                      inputRange: [-width, 0],
-                      outputRange: [0, 0],
-                    }),
-                  },
-                ],
               },
             ]}
           >
