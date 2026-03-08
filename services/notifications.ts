@@ -1,5 +1,6 @@
-// MODDESS TIPS - Notifications Service
+// MODDESS TIPS - Notifications Service (Without Auto-Notification for Predictions)
 import { getSupabaseClient } from '@/template';
+import { pushNotificationsService } from './pushNotifications';
 
 export interface Notification {
   id: string;
@@ -64,7 +65,7 @@ export const notificationsService = {
     }
   },
 
-  // Create notification for all users (admin only)
+  // Create notification for all users (admin only) - PUSH NOTIFICATION ENABLED
   async notifyAllUsers(title: string, message: string, type: Notification['type']): Promise<{ error: string | null }> {
     try {
       // Get all users
@@ -88,6 +89,10 @@ export const notificationsService = {
         .insert(notifications);
       
       if (error) throw error;
+
+      // Send push notification to all users
+      await pushNotificationsService.sendPushToAll(title, message, { type });
+      
       return { error: null };
     } catch (error: any) {
       return { error: error.message };

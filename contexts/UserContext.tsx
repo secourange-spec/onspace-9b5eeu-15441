@@ -1,7 +1,8 @@
-// MODDESS TIPS - User Context
+// MODDESS TIPS - User Context with Push Notifications
 import React, { createContext, useState, useEffect, ReactNode } from 'react';
 import { useAuth } from '@/template';
 import { usersService, UserProfile } from '@/services/users';
+import { pushNotificationsService } from '@/services/pushNotifications';
 
 interface UserContextType {
   profile: UserProfile | null;
@@ -17,6 +18,22 @@ export function UserProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // Register for push notifications
+  const registerPushNotifications = async () => {
+    if (!user?.id) return;
+
+    const { token, error } = await pushNotificationsService.registerForPushNotifications();
+    if (error) {
+      console.warn('[UserContext] Push notification registration failed:', error);
+      return;
+    }
+
+    if (token) {
+      console.log('[UserContext] ✅ Push token received:', token);
+      await pushNotificationsService.savePushToken(user.id, token);
+    }
+  };
 
   const loadProfile = async () => {
     console.log('\n========================================');
@@ -56,6 +73,9 @@ export function UserProvider({ children }: { children: ReactNode }) {
           banned: data.banned
         });
         setProfile(data);
+        
+        // Register for push notifications after profile is loaded
+        registerPushNotifications();
       } else {
         console.warn('[UserContext] ⚠️ NO ERROR BUT NO DATA - This should not happen');
         setProfile(null);

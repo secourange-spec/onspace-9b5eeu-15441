@@ -1,7 +1,9 @@
-// MODDESS TIPS - Admin Dashboard (Version complète avec gestion notifications + historique)
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, TextInput, Modal, Platform } from 'react-native';
+
+// MODDESS TIPS - Professional Admin Dashboard (English, Fixed User Loading, Push Notifications)
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, StyleSheet, ScrollView, Pressable, TextInput, Modal, Platform, RefreshControl } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { theme } from '@/constants/theme';
 import { APP_CONFIG } from '@/constants/config';
 import { useUser } from '@/hooks/useUser';
@@ -10,7 +12,6 @@ import { usersService, UserProfile } from '@/services/users';
 import { predictionsService, Prediction, HistoryEntry } from '@/services/predictions';
 import { notificationsService, Notification } from '@/services/notifications';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-
 
 interface NewPrediction {
   championship: string;
@@ -29,14 +30,19 @@ export default function AdminScreen() {
   const { showAlert } = useAlert();
   const insets = useSafeAreaInsets();
 
-  const [activeTab, setActiveTab] = useState<'predictions' | 'users' | 'stats' | 'history' | 'notifications'>('predictions');
+  const [activeTab, setActiveTab] = useState<'predictions' | 'users' | 'stats' | 'history' | 'notifications'>('stats');
+  const [refreshing, setRefreshing] = useState(false);
+  
+  // Users state
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [userSearch, setUserSearch] = useState('');
   const [userFilter, setUserFilter] = useState<'all' | 'admin' | 'user' | 'vip'>('all');
   const [userPage, setUserPage] = useState(0);
   const [totalUsers, setTotalUsers] = useState(0);
   const [hasMoreUsers, setHasMoreUsers] = useState(true);
-  const USERS_PER_PAGE = 20;
+  const [loadingUsers, setLoadingUsers] = useState(false);
+  const USERS_PER_PAGE = 50; // Increased from 20 to 50
+
   const [predictions, setPredictions] = useState<Prediction[]>([]);
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -48,8 +54,8 @@ export default function AdminScreen() {
   
   const [manualDateTime, setManualDateTime] = useState('');
 
-  // Notification form
-  const [customNotification, setCustomNotification] = useState({
+  // Push Notification form
+  const [pushNotification, setPushNotification] = useState({
     title: '',
     message: '',
     type: 'info' as Notification['type'],
@@ -64,26 +70,31 @@ export default function AdminScreen() {
     bet: '',
     odds: '',
     success_rate: '',
-    match_date: new Date().toISOString(),
+    match_date: new Date().toISOString(), // Fixed: 'toISO String()' to 'toISOString()'
     advice: '',
   });
 
   const freeSections = [
-    { value: 'cote_2_free', label: 'Côte 2' },
-    { value: 'accumulation_free', label: 'Accumulation' },
+    { value: 'cote_2_free', label: 'Odds 2' },
+    { value: 'accumulation_free', label: 'Accumulator' },
   ];
 
   const vipSections = [
-    { value: 'cote_2_vip', label: 'Côte 2 VIP' },
-    { value: 'cote_5_vip', label: 'Côte 5 VIP' },
-    { value: 'score_exact_vip', label: 'Score Exact' },
+    { value: 'cote_2_vip', label: 'Odds 2 VIP' },
+    { value: 'cote_5_vip', label: 'Odds 5 VIP' },
+    { value: 'score_exact_vip', label: 'Correct Score' },
     { value: 'ht_ft_vip', label: 'HT/FT' },
   ];
 
   const sections = newPrediction.category === 'free' ? freeSections : vipSections;
 
-  // Load data
-  const loadUsers = async (page: number = 0, append: boolean = false) => {
+  // Load users with pagination - FIXED
+  const loadUsers = useCallback(async (page: number = 0, append: boolean = false) => {
+    if (loadingUsers) return; // Prevent duplicate calls
+    
+    setLoadingUsers(true);
+    console.log(`[Admin] Loading users - Page: ${page}, Append: ${append}`);
+    
     const { data, error, count } = await usersService.getAllUsers({
       limit: USERS_PER_PAGE,
       offset: page * USERS_PER_PAGE,
@@ -92,9 +103,14 @@ export default function AdminScreen() {
       vipOnly: userFilter === 'vip',
     });
     
+    setLoadingUsers(false);
+    
     if (error) {
-      showAlert('Erreur', error);
+      console.error('[Admin] Error loading users:', error);
+      showAlert('Error', error);
     } else if (data) {
+      console.log(`[Admin] Loaded ${data.length} users (Total: ${count})`);
+      
       if (append) {
         setUsers(prev => [...prev, ...data]);
       } else {
@@ -103,10 +119,10 @@ export default function AdminScreen() {
       setTotalUsers(count || 0);
       setHasMoreUsers(data.length === USERS_PER_PAGE);
     }
-  };
+  }, [userSearch, userFilter, loadingUsers]);
 
   const loadMoreUsers = () => {
-    if (hasMoreUsers) {
+    if (hasMoreUsers && !loadingUsers) {
       const nextPage = userPage + 1;
       setUserPage(nextPage);
       loadUsers(nextPage, true);
@@ -115,13 +131,14 @@ export default function AdminScreen() {
 
   const refreshUsers = () => {
     setUserPage(0);
+    setUsers([]); // Clear existing users
     loadUsers(0, false);
   };
 
   const loadPredictions = async () => {
     const { data, error } = await predictionsService.getActivePredictions(true);
     if (error) {
-      showAlert('Erreur', error);
+      showAlert('Error', error);
     } else if (data) {
       setPredictions(data);
     }
@@ -130,7 +147,7 @@ export default function AdminScreen() {
   const loadHistory = async () => {
     const { data, error } = await predictionsService.getAllHistory();
     if (error) {
-      showAlert('Erreur', error);
+      showAlert('Error', error);
     } else if (data) {
       setHistory(data);
     }
@@ -139,47 +156,51 @@ export default function AdminScreen() {
   const loadNotifications = async () => {
     const { data, error } = await notificationsService.getAllNotifications();
     if (error) {
-      showAlert('Erreur', error);
+      showAlert('Error', error);
     } else if (data) {
       setNotifications(data);
     }
   };
 
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    if (activeTab === 'users') await refreshUsers();
+    if (activeTab === 'predictions') await loadPredictions();
+    if (activeTab === 'history') await loadHistory();
+    if (activeTab === 'notifications') await loadNotifications();
+    setRefreshing(false);
+  }, [activeTab]);
+
   useEffect(() => {
     if (isAdmin) {
-      refreshUsers();
-      loadPredictions();
+      if (activeTab === 'users') refreshUsers();
+      if (activeTab === 'predictions') loadPredictions();
       if (activeTab === 'history') loadHistory();
       if (activeTab === 'notifications') loadNotifications();
     }
   }, [isAdmin, activeTab]);
 
-  // Rafraîchir les utilisateurs quand les filtres changent
+  // Reload users when filters change
   useEffect(() => {
     if (isAdmin && activeTab === 'users') {
-      refreshUsers();
+      setUserPage(0);
+      setUsers([]);
+      loadUsers(0, false);
     }
   }, [userSearch, userFilter]);
 
-  // Create prediction
+  // Create prediction (without auto-notification)
   const handleCreatePrediction = async () => {
     if (!newPrediction.championship || !newPrediction.match || !newPrediction.bet || !newPrediction.odds) {
-      showAlert('Erreur', 'Veuillez remplir tous les champs obligatoires (Championnat, Match, Pronostic, Côte)');
+      showAlert('Error', 'Please fill in all required fields (Championship, Match, Bet, Odds)');
       return;
     }
 
     const { data, error } = await predictionsService.createPrediction(newPrediction);
     if (error) {
-      showAlert('Erreur', error);
+      showAlert('Error', error);
     } else {
-      // Notify all users
-      await notificationsService.notifyAllUsers(
-        'Nouveau pronostic disponible',
-        `${newPrediction.championship} - ${newPrediction.match}`,
-        'prediction'
-      );
-
-      showAlert('Succès', 'Pronostic créé et notification envoyée');
+      showAlert('Success', 'Prediction created successfully! Send a push notification to notify users.');
       setShowCreateModal(false);
       setNewPrediction({
         championship: '',
@@ -196,13 +217,35 @@ export default function AdminScreen() {
     }
   };
 
+  // Send push notification to all users
+  const handleSendPushNotification = async () => {
+    if (!pushNotification.title || !pushNotification.message) {
+      showAlert('Error', 'Please fill in title and message');
+      return;
+    }
+
+    const { error } = await notificationsService.notifyAllUsers(
+      pushNotification.title,
+      pushNotification.message,
+      pushNotification.type
+    );
+
+    if (error) {
+      showAlert('Error', error);
+    } else {
+      showAlert('Success', 'Push notification sent to all users!');
+      setShowNotificationModal(false);
+      setPushNotification({ title: '', message: '', type: 'info' });
+    }
+  };
+
   // Update prediction status
   const handleUpdateStatus = async (predictionId: string, status: 'won' | 'lost') => {
     const { error } = await predictionsService.updatePredictionStatus(predictionId, status);
     if (error) {
-      showAlert('Erreur', error);
+      showAlert('Error', error);
     } else {
-      showAlert('Succès', `Pronostic marqué comme ${status === 'won' ? 'gagné' : 'perdu'}`);
+      showAlert('Success', `Prediction marked as ${status}`);
       loadPredictions();
     }
   };
@@ -211,9 +254,9 @@ export default function AdminScreen() {
   const handleMoveToHistory = async (predictionId: string) => {
     const { error } = await predictionsService.moveToHistory(predictionId);
     if (error) {
-      showAlert('Erreur', error);
+      showAlert('Error', error);
     } else {
-      showAlert('Succès', 'Pronostic déplacé vers l\'historique');
+      showAlert('Success', 'Prediction moved to history');
       loadPredictions();
     }
   };
@@ -222,9 +265,9 @@ export default function AdminScreen() {
   const handleDeletePrediction = async (predictionId: string) => {
     const { error } = await predictionsService.deletePrediction(predictionId);
     if (error) {
-      showAlert('Erreur', error);
+      showAlert('Error', error);
     } else {
-      showAlert('Succès', 'Pronostic supprimé');
+      showAlert('Success', 'Prediction deleted');
       loadPredictions();
     }
   };
@@ -233,11 +276,10 @@ export default function AdminScreen() {
   const handleDeleteHistory = async (historyId: string) => {
     const { error } = await predictionsService.deleteHistory(historyId);
     if (error) {
-      showAlert('Erreur', error);
+      showAlert('Error', error);
     } else {
-      // Remove from local state immediately
       setHistory(prev => prev.filter(h => h.id !== historyId));
-      showAlert('Succès', 'Historique supprimé');
+      showAlert('Success', 'History deleted');
     }
   };
 
@@ -245,37 +287,14 @@ export default function AdminScreen() {
   const handleDeleteNotification = async (notificationId: string) => {
     const { error } = await notificationsService.deleteNotification(notificationId);
     if (error) {
-      showAlert('Erreur', error);
+      showAlert('Error', error);
     } else {
-      // Remove from local state immediately
       setNotifications(prev => prev.filter(n => n.id !== notificationId));
-      showAlert('Succès', 'Notification supprimée');
+      showAlert('Success', 'Notification deleted');
     }
   };
 
-  // Send custom notification
-  const handleSendNotification = async () => {
-    if (!customNotification.title || !customNotification.message) {
-      showAlert('Erreur', 'Veuillez remplir le titre et le message');
-      return;
-    }
-
-    const { error } = await notificationsService.notifyAllUsers(
-      customNotification.title,
-      customNotification.message,
-      customNotification.type
-    );
-
-    if (error) {
-      showAlert('Erreur', error);
-    } else {
-      showAlert('Succès', 'Notification envoyée à tous les utilisateurs');
-      setShowNotificationModal(false);
-      setCustomNotification({ title: '', message: '', type: 'info' });
-    }
-  };
-
-  // Update VIP status
+  // Update VIP status - UPDATED PRICES
   const handleUpdateVip = async (userId: string, isVip: boolean, days?: number) => {
     const expireDate = days
       ? new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString()
@@ -283,9 +302,9 @@ export default function AdminScreen() {
 
     const { error } = await usersService.updateVipStatus(userId, isVip, expireDate);
     if (error) {
-      showAlert('Erreur', error);
+      showAlert('Error', error);
     } else {
-      showAlert('Succès', isVip ? 'Utilisateur passé VIP' : 'VIP révoqué');
+      showAlert('Success', isVip ? 'User upgraded to VIP' : 'VIP access revoked');
       refreshUsers();
       setShowUserModal(false);
     }
@@ -295,9 +314,21 @@ export default function AdminScreen() {
   const handleBanUser = async (userId: string, ban: boolean) => {
     const { error } = await usersService.updateBanStatus(userId, ban);
     if (error) {
-      showAlert('Erreur', error);
+      showAlert('Error', error);
     } else {
-      showAlert('Succès', ban ? 'Utilisateur banni' : 'Ban révoqué');
+      showAlert('Success', ban ? 'User banned' : 'User unbanned');
+      refreshUsers();
+      setShowUserModal(false);
+    }
+  };
+
+  // Delete user
+  const handleDeleteUser = async (userId: string) => {
+    const { error } = await usersService.deleteUser(userId);
+    if (error) {
+      showAlert('Error', error);
+    } else {
+      showAlert('Success', 'User deleted');
       refreshUsers();
       setShowUserModal(false);
     }
@@ -305,7 +336,6 @@ export default function AdminScreen() {
 
   // Format date from manual input
   const formatManualDate = (input: string): string | undefined => {
-    // Accept formats: DD/MM/YYYY HH:MM or YYYY-MM-DD HH:MM
     try {
       if (!input.trim()) return new Date().toISOString();
       
@@ -317,16 +347,13 @@ export default function AdminScreen() {
       
       let year: number, month: number, day: number;
       
-      // Try DD/MM/YYYY format
       if (datePart.includes('/')) {
         const dateComponents = datePart.split('/');
         if (dateComponents.length !== 3) return undefined;
         day = parseInt(dateComponents[0]);
-        month = parseInt(dateComponents[1]) - 1; // Month is 0-indexed
+        month = parseInt(dateComponents[1]) - 1;
         year = parseInt(dateComponents[2]);
-      }
-      // Try YYYY-MM-DD format
-      else if (datePart.includes('-')) {
+      } else if (datePart.includes('-')) {
         const dateComponents = datePart.split('-');
         if (dateComponents.length !== 3) return undefined;
         year = parseInt(dateComponents[0]);
@@ -350,7 +377,7 @@ export default function AdminScreen() {
   };
 
   const stats = {
-    totalUsers: users.length,
+    totalUsers,
     vipUsers: users.filter(u => usersService.isVipActive(u)).length,
     freeUsers: users.filter(u => !usersService.isVipActive(u)).length,
     activePredictions: predictions.length,
@@ -364,13 +391,18 @@ export default function AdminScreen() {
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* Header */}
-      <View style={styles.header}>
+      <LinearGradient
+        colors={[theme.colors.vipGradientStart, theme.colors.vipGradientEnd]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
+        style={styles.header}
+      >
         <View>
           <Text style={styles.title}>Admin Dashboard</Text>
-          <Text style={styles.subtitle}>Gestion complète</Text>
+          <Text style={styles.subtitle}>Complete Management</Text>
         </View>
-        <MaterialIcons name="admin-panel-settings" size={24} color={theme.colors.primary} />
-      </View>
+        <MaterialIcons name="admin-panel-settings" size={28} color="#FFF" />
+      </LinearGradient>
 
       {/* Tabs */}
       <ScrollView 
@@ -391,60 +423,66 @@ export default function AdminScreen() {
           onPress={() => setActiveTab('predictions')}
         >
           <MaterialIcons name="sports-soccer" size={18} color={activeTab === 'predictions' ? theme.colors.primary : theme.colors.textMuted} />
-          <Text style={[styles.tabText, activeTab === 'predictions' && styles.tabTextActive]}>Pronostics</Text>
+          <Text style={[styles.tabText, activeTab === 'predictions' && styles.tabTextActive]}>Predictions</Text>
         </Pressable>
         <Pressable
           style={[styles.tab, activeTab === 'users' && styles.tabActive]}
           onPress={() => setActiveTab('users')}
         >
           <MaterialIcons name="people" size={18} color={activeTab === 'users' ? theme.colors.primary : theme.colors.textMuted} />
-          <Text style={[styles.tabText, activeTab === 'users' && styles.tabTextActive]}>Utilisateurs</Text>
+          <Text style={[styles.tabText, activeTab === 'users' && styles.tabTextActive]}>Users ({totalUsers})</Text>
         </Pressable>
         <Pressable
           style={[styles.tab, activeTab === 'history' && styles.tabActive]}
           onPress={() => setActiveTab('history')}
         >
           <MaterialIcons name="history" size={18} color={activeTab === 'history' ? theme.colors.primary : theme.colors.textMuted} />
-          <Text style={[styles.tabText, activeTab === 'history' && styles.tabTextActive]}>Historique</Text>
+          <Text style={[styles.tabText, activeTab === 'history' && styles.tabTextActive]}>History</Text>
         </Pressable>
         <Pressable
           style={[styles.tab, activeTab === 'notifications' && styles.tabActive]}
           onPress={() => setActiveTab('notifications')}
         >
-          <MaterialIcons name="notifications" size={18} color={activeTab === 'notifications' ? theme.colors.primary : theme.colors.textMuted} />
-          <Text style={[styles.tabText, activeTab === 'notifications' && styles.tabTextActive]}>Notifications</Text>
+          <MaterialIcons name="send" size={18} color={activeTab === 'notifications' ? theme.colors.primary : theme.colors.textMuted} />
+          <Text style={[styles.tabText, activeTab === 'notifications' && styles.tabTextActive]}>Push</Text>
         </Pressable>
       </ScrollView>
 
-      {/* Content */}
-      <ScrollView style={styles.content} contentContainerStyle={[styles.contentContainer, { paddingBottom: insets.bottom + 20 }]}>
+      {/* Content with Pull-to-Refresh */}
+      <ScrollView 
+        style={styles.content}
+        contentContainerStyle={[styles.contentContainer, { paddingBottom: insets.bottom + 20 }]}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[theme.colors.primary]} />
+        }
+      >
         {/* Stats Tab */}
         {activeTab === 'stats' && (
           <View style={styles.statsGrid}>
-            <View style={styles.statCard}>
-              <MaterialIcons name="people" size={32} color={theme.colors.info} />
-              <Text style={styles.statValue}>{stats.totalUsers}</Text>
-              <Text style={styles.statLabel}>Total utilisateurs</Text>
+            <View style={[styles.statCard, styles.statCardPrimary]}>
+              <MaterialIcons name="people" size={36} color="#FFF" />
+              <Text style={styles.statValueWhite}>{stats.totalUsers}</Text>
+              <Text style={styles.statLabelWhite}>Total Users</Text>
             </View>
             <View style={styles.statCard}>
               <MaterialIcons name="workspace-premium" size={32} color={theme.colors.primary} />
               <Text style={styles.statValue}>{stats.vipUsers}</Text>
-              <Text style={styles.statLabel}>VIP actifs</Text>
+              <Text style={styles.statLabel}>VIP Active</Text>
             </View>
             <View style={styles.statCard}>
               <MaterialIcons name="person" size={32} color={theme.colors.textMuted} />
               <Text style={styles.statValue}>{stats.freeUsers}</Text>
-              <Text style={styles.statLabel}>FREE</Text>
+              <Text style={styles.statLabel}>FREE Users</Text>
             </View>
             <View style={styles.statCard}>
               <MaterialIcons name="sports-soccer" size={32} color={theme.colors.success} />
               <Text style={styles.statValue}>{stats.activePredictions}</Text>
-              <Text style={styles.statLabel}>Pronostics actifs</Text>
+              <Text style={styles.statLabel}>Active Predictions</Text>
             </View>
             <View style={styles.statCardLarge}>
-              <MaterialIcons name="trending-up" size={40} color={theme.colors.success} />
+              <MaterialIcons name="trending-up" size={44} color={theme.colors.success} />
               <Text style={styles.statValueLarge}>{stats.wonRate}%</Text>
-              <Text style={styles.statLabelLarge}>Taux de réussite global</Text>
+              <Text style={styles.statLabelLarge}>Overall Success Rate</Text>
             </View>
           </View>
         )}
@@ -453,73 +491,80 @@ export default function AdminScreen() {
         {activeTab === 'predictions' && (
           <View>
             <Pressable style={styles.createButton} onPress={() => setShowCreateModal(true)}>
-              <MaterialIcons name="add-circle" size={24} color="#000" />
-              <Text style={styles.createButtonText}>Créer un pronostic</Text>
+              <MaterialIcons name="add-circle" size={24} color="#FFF" />
+              <Text style={styles.createButtonText}>Create Prediction</Text>
             </Pressable>
 
-            {predictions.map((prediction) => (
-              <View key={prediction.id} style={styles.predictionCard}>
-                <View style={styles.predictionHeader}>
-                  <Text style={styles.predictionChampionship}>{prediction.championship || 'Non spécifié'}</Text>
-                  <View style={[styles.categoryBadge, prediction.category === 'vip' && styles.categoryBadgeVip]}>
-                    <Text style={styles.categoryText}>{prediction.category.toUpperCase()}</Text>
+            {predictions.length === 0 ? (
+              <View style={styles.emptyContainer}>
+                <MaterialIcons name="sports-soccer" size={48} color={theme.colors.textMuted} />
+                <Text style={styles.emptyText}>No active predictions</Text>
+              </View>
+            ) : (
+              predictions.map((prediction) => (
+                <View key={prediction.id} style={styles.predictionCard}>
+                  <View style={styles.predictionHeader}>
+                    <Text style={styles.predictionChampionship}>{prediction.championship || 'Not specified'}</Text>
+                    <View style={[styles.categoryBadge, prediction.category === 'vip' && styles.categoryBadgeVip]}>
+                      <Text style={styles.categoryText}>{prediction.category.toUpperCase()}</Text>
+                    </View>
+                  </View>
+                  <Text style={styles.predictionMatch}>{prediction.match}</Text>
+                  <Text style={styles.predictionBet}>Bet: {prediction.bet}</Text>
+                  <Text style={styles.predictionOdds}>Odds: {prediction.odds}</Text>
+                  
+                  <View style={styles.predictionActions}>
+                    {prediction.status === 'pending' && (
+                      <>
+                        <Pressable
+                          style={[styles.actionButton, styles.actionButtonSuccess]}
+                          onPress={() => handleUpdateStatus(prediction.id, 'won')}
+                        >
+                          <MaterialIcons name="check" size={16} color="#fff" />
+                          <Text style={styles.actionButtonText}>Won</Text>
+                        </Pressable>
+                        <Pressable
+                          style={[styles.actionButton, styles.actionButtonError]}
+                          onPress={() => handleUpdateStatus(prediction.id, 'lost')}
+                        >
+                          <MaterialIcons name="close" size={16} color="#fff" />
+                          <Text style={styles.actionButtonText}>Lost</Text>
+                        </Pressable>
+                      </>
+                    )}
+                    {prediction.status !== 'pending' && (
+                      <Pressable
+                        style={[styles.actionButton, styles.actionButtonInfo]}
+                        onPress={() => handleMoveToHistory(prediction.id)}
+                      >
+                        <MaterialIcons name="archive" size={16} color="#fff" />
+                        <Text style={styles.actionButtonText}>Archive</Text>
+                      </Pressable>
+                    )}
+                    <Pressable
+                      style={[styles.actionButton, styles.actionButtonWarning]}
+                      onPress={() => handleDeletePrediction(prediction.id)}
+                    >
+                      <MaterialIcons name="delete" size={16} color="#fff" />
+                      <Text style={styles.actionButtonText}>Delete</Text>
+                    </Pressable>
                   </View>
                 </View>
-                <Text style={styles.predictionMatch}>{prediction.match}</Text>
-                <Text style={styles.predictionBet}>Pronostic: {prediction.bet}</Text>
-                <Text style={styles.predictionOdds}>Côte: {prediction.odds}</Text>
-                
-                <View style={styles.predictionActions}>
-                  {prediction.status === 'pending' && (
-                    <>
-                      <Pressable
-                        style={[styles.actionButton, styles.actionButtonSuccess]}
-                        onPress={() => handleUpdateStatus(prediction.id, 'won')}
-                      >
-                        <MaterialIcons name="check" size={16} color="#fff" />
-                        <Text style={styles.actionButtonText}>Gagné</Text>
-                      </Pressable>
-                      <Pressable
-                        style={[styles.actionButton, styles.actionButtonError]}
-                        onPress={() => handleUpdateStatus(prediction.id, 'lost')}
-                      >
-                        <MaterialIcons name="close" size={16} color="#fff" />
-                        <Text style={styles.actionButtonText}>Perdu</Text>
-                      </Pressable>
-                    </>
-                  )}
-                  {prediction.status !== 'pending' && (
-                    <Pressable
-                      style={[styles.actionButton, styles.actionButtonInfo]}
-                      onPress={() => handleMoveToHistory(prediction.id)}
-                    >
-                      <MaterialIcons name="archive" size={16} color="#fff" />
-                      <Text style={styles.actionButtonText}>Archiver</Text>
-                    </Pressable>
-                  )}
-                  <Pressable
-                    style={[styles.actionButton, styles.actionButtonWarning]}
-                    onPress={() => handleDeletePrediction(prediction.id)}
-                  >
-                    <MaterialIcons name="delete" size={16} color="#fff" />
-                    <Text style={styles.actionButtonText}>Supprimer</Text>
-                  </Pressable>
-                </View>
-              </View>
-            ))}
+              ))
+            )}
           </View>
         )}
 
-        {/* Users Tab */}
+        {/* Users Tab - FIXED */}
         {activeTab === 'users' && (
           <View>
-            {/* Barre de recherche et filtres */}
+            {/* Search */}
             <View style={styles.searchContainer}>
               <View style={styles.searchInputContainer}>
                 <MaterialIcons name="search" size={20} color={theme.colors.textMuted} />
                 <TextInput
                   style={styles.searchInput}
-                  placeholder="Rechercher par email..."
+                  placeholder="Search by email..."
                   placeholderTextColor={theme.colors.textMuted}
                   value={userSearch}
                   onChangeText={setUserSearch}
@@ -532,7 +577,7 @@ export default function AdminScreen() {
               </View>
             </View>
 
-            {/* Filtres */}
+            {/* Filters */}
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
@@ -543,7 +588,7 @@ export default function AdminScreen() {
                 style={[styles.filterChip, userFilter === 'all' && styles.filterChipActive]}
                 onPress={() => setUserFilter('all')}
               >
-                <Text style={[styles.filterChipText, userFilter === 'all' && styles.filterChipTextActive]}>Tous</Text>
+                <Text style={[styles.filterChipText, userFilter === 'all' && styles.filterChipTextActive]}>All</Text>
               </Pressable>
               <Pressable
                 style={[styles.filterChip, userFilter === 'vip' && styles.filterChipActive]}
@@ -561,16 +606,16 @@ export default function AdminScreen() {
                 style={[styles.filterChip, userFilter === 'user' && styles.filterChipActive]}
                 onPress={() => setUserFilter('user')}
               >
-                <Text style={[styles.filterChipText, userFilter === 'user' && styles.filterChipTextActive]}>Utilisateurs</Text>
+                <Text style={[styles.filterChipText, userFilter === 'user' && styles.filterChipTextActive]}>Users</Text>
               </Pressable>
             </ScrollView>
 
-            {/* Compteur */}
+            {/* Count */}
             <Text style={styles.userCount}>
-              {totalUsers} utilisateur{totalUsers > 1 ? 's' : ''} au total · Page {userPage + 1}
+              {totalUsers} user{totalUsers > 1 ? 's' : ''} total · Showing {users.length} · Page {userPage + 1}
             </Text>
 
-            {/* Liste des utilisateurs */}
+            {/* User List */}
             {users.map((user) => (
               <Pressable
                 key={user.id}
@@ -597,31 +642,38 @@ export default function AdminScreen() {
                   )}
                   {user.banned && (
                     <View style={styles.bannedBadgeSmall}>
-                      <Text style={styles.bannedBadgeText}>BANNI</Text>
+                      <Text style={styles.bannedBadgeText}>BANNED</Text>
                     </View>
                   )}
                 </View>
               </Pressable>
             ))}
 
-            {/* Bouton Charger plus */}
-            {hasMoreUsers && (
+            {/* Load More */}
+            {hasMoreUsers && !loadingUsers && (
               <Pressable style={styles.loadMoreButton} onPress={loadMoreUsers}>
                 <MaterialIcons name="expand-more" size={20} color={theme.colors.primary} />
-                <Text style={styles.loadMoreText}>Charger plus d'utilisateurs</Text>
+                <Text style={styles.loadMoreText}>Load More Users</Text>
               </Pressable>
             )}
 
-            {/* Message fin de liste */}
-            {!hasMoreUsers && users.length > 0 && (
-              <Text style={styles.endOfListText}>Tous les utilisateurs ont été chargés</Text>
+            {/* Loading */}
+            {loadingUsers && (
+              <View style={styles.loadingContainer}>
+                <Text style={styles.loadingText}>Loading...</Text>
+              </View>
             )}
 
-            {/* Message liste vide */}
-            {users.length === 0 && (
+            {/* End */}
+            {!hasMoreUsers && users.length > 0 && (
+              <Text style={styles.endOfListText}>All users loaded</Text>
+            )}
+
+            {/* Empty */}
+            {users.length === 0 && !loadingUsers && (
               <View style={styles.emptyContainer}>
                 <MaterialIcons name="person-off" size={48} color={theme.colors.textMuted} />
-                <Text style={styles.emptyText}>Aucun utilisateur trouvé</Text>
+                <Text style={styles.emptyText}>No users found</Text>
               </View>
             )}
           </View>
@@ -633,23 +685,23 @@ export default function AdminScreen() {
             {history.length === 0 ? (
               <View style={styles.emptyContainer}>
                 <MaterialIcons name="history" size={48} color={theme.colors.textMuted} />
-                <Text style={styles.emptyText}>Aucun historique</Text>
+                <Text style={styles.emptyText}>No history</Text>
               </View>
             ) : (
               history.map((entry) => (
                 <View key={entry.id} style={styles.historyCard}>
                   <Text style={styles.historyChampionship}>{entry.championship}</Text>
                   <Text style={styles.historyMatch}>{entry.match}</Text>
-                  <Text style={styles.historyBet}>Pronostic: {entry.bet}</Text>
+                  <Text style={styles.historyBet}>Bet: {entry.bet}</Text>
                   <View style={styles.historyFooter}>
                     <View style={[styles.statusBadge, entry.status === 'won' ? styles.statusWon : styles.statusLost]}>
-                      <Text style={styles.statusText}>{entry.status === 'won' ? 'Gagné' : 'Perdu'}</Text>
+                      <Text style={styles.statusText}>{entry.status === 'won' ? 'Won' : 'Lost'}</Text>
                     </View>
                     <Pressable
                       style={styles.deleteHistoryButton}
                       onPress={() => handleDeleteHistory(entry.id)}
                     >
-                      <MaterialIcons name="delete" size={16} color={theme.colors.error} />
+                      <MaterialIcons name="delete" size={18} color={theme.colors.error} />
                     </Pressable>
                   </View>
                 </View>
@@ -658,18 +710,28 @@ export default function AdminScreen() {
           </View>
         )}
 
-        {/* Notifications Tab */}
+        {/* Push Notifications Tab */}
         {activeTab === 'notifications' && (
           <View>
             <Pressable style={styles.createButton} onPress={() => setShowNotificationModal(true)}>
-              <MaterialIcons name="send" size={24} color="#000" />
-              <Text style={styles.createButtonText}>Envoyer une notification</Text>
+              <MaterialIcons name="send" size={24} color="#FFF" />
+              <Text style={styles.createButtonText}>Send Push Notification</Text>
             </Pressable>
+
+            <View style={styles.infoCard}>
+              <MaterialIcons name="info" size={24} color={theme.colors.info} />
+              <View style={styles.infoTextContainer}>
+                <Text style={styles.infoTitle}>Push Notifications Enabled</Text>
+                <Text style={styles.infoText}>
+                  Send instant push notifications to all users. They will receive alerts even when the app is closed.
+                </Text>
+              </View>
+            </View>
 
             {notifications.length === 0 ? (
               <View style={styles.emptyContainer}>
                 <MaterialIcons name="notifications-none" size={48} color={theme.colors.textMuted} />
-                <Text style={styles.emptyText}>Aucune notification</Text>
+                <Text style={styles.emptyText}>No notifications sent yet</Text>
               </View>
             ) : (
               notifications.map((notif) => (
@@ -682,7 +744,7 @@ export default function AdminScreen() {
                   </View>
                   <Text style={styles.notifMessage}>{notif.message}</Text>
                   <Text style={styles.notifDate}>
-                    {new Date(notif.created_at).toLocaleDateString('fr-FR', {
+                    {new Date(notif.created_at).toLocaleDateString('en-US', {
                       day: '2-digit',
                       month: 'short',
                       hour: '2-digit',
@@ -701,40 +763,37 @@ export default function AdminScreen() {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Créer un pronostic</Text>
+              <Text style={styles.modalTitle}>Create Prediction</Text>
               <Pressable onPress={() => setShowCreateModal(false)}>
                 <MaterialIcons name="close" size={24} color={theme.colors.textPrimary} />
               </Pressable>
             </View>
 
             <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
-              {/* Championnat */}
-              <Text style={styles.inputLabel}>Championnat *</Text>
+              <Text style={styles.inputLabel}>Championship *</Text>
               <TextInput
                 style={styles.input}
-                placeholder="Ex: Ligue 1, Premier League, Champions League"
+                placeholder="Ex: Premier League, La Liga"
                 placeholderTextColor={theme.colors.textMuted}
                 value={newPrediction.championship}
                 onChangeText={(text) => setNewPrediction({ ...newPrediction, championship: text })}
               />
 
-              {/* Match */}
-              <Text style={styles.inputLabel}>Match (Équipe vs Équipe) *</Text>
+              <Text style={styles.inputLabel}>Match (Team vs Team) *</Text>
               <TextInput
                 style={styles.input}
-                placeholder="Ex: PSG vs OM"
+                placeholder="Ex: Manchester United vs Liverpool"
                 placeholderTextColor={theme.colors.textMuted}
                 value={newPrediction.match}
                 onChangeText={(text) => setNewPrediction({ ...newPrediction, match: text })}
               />
 
-              {/* Date et heure */}
-              <Text style={styles.inputLabel}>Date et heure du match</Text>
+              <Text style={styles.inputLabel}>Match Date & Time</Text>
               <View style={styles.dateInputContainer}>
                 <MaterialIcons name="calendar-today" size={20} color={theme.colors.textSecondary} style={styles.dateIcon} />
                 <TextInput
                   style={styles.dateInput}
-                  placeholder="JJ/MM/AAAA HH:MM (ex: 25/03/2026 20:30)"
+                  placeholder="DD/MM/YYYY HH:MM (ex: 25/03/2026 20:30)"
                   placeholderTextColor={theme.colors.textMuted}
                   value={manualDateTime}
                   onChangeText={(text) => {
@@ -750,17 +809,15 @@ export default function AdminScreen() {
                       if (formatted) {
                         setNewPrediction({ ...newPrediction, match_date: formatted });
                       } else {
-                        showAlert('Format invalide', 'Utilisez le format: JJ/MM/AAAA HH:MM');
+                        showAlert('Invalid Format', 'Use format: DD/MM/YYYY HH:MM');
                         setManualDateTime('');
                       }
                     }
                   }}
                 />
               </View>
-              <Text style={styles.dateHint}>Format: JJ/MM/AAAA HH:MM (ex: 25/03/2026 20:30)</Text>
 
-              {/* Catégorie */}
-              <Text style={styles.inputLabel}>Catégorie *</Text>
+              <Text style={styles.inputLabel}>Category *</Text>
               <View style={styles.categorySelector}>
                 <Pressable
                   style={[styles.categoryOption, newPrediction.category === 'free' && styles.categoryOptionActive]}
@@ -776,7 +833,6 @@ export default function AdminScreen() {
                 </Pressable>
               </View>
 
-              {/* Section */}
               <Text style={styles.inputLabel}>Section *</Text>
               <View style={styles.sectionSelector}>
                 {sections.map((section) => (
@@ -800,18 +856,16 @@ export default function AdminScreen() {
                 ))}
               </View>
 
-              {/* Pronostic */}
-              <Text style={styles.inputLabel}>Pronostic *</Text>
+              <Text style={styles.inputLabel}>Bet *</Text>
               <TextInput
                 style={styles.input}
-                placeholder="Ex: 1X2 - Domicile, Plus de 2.5 buts"
+                placeholder="Ex: Over 2.5 Goals, Home Win"
                 placeholderTextColor={theme.colors.textMuted}
                 value={newPrediction.bet}
                 onChangeText={(text) => setNewPrediction({ ...newPrediction, bet: text })}
               />
 
-              {/* Côte */}
-              <Text style={styles.inputLabel}>Côte *</Text>
+              <Text style={styles.inputLabel}>Odds *</Text>
               <TextInput
                 style={styles.input}
                 placeholder="Ex: 1.85"
@@ -821,8 +875,7 @@ export default function AdminScreen() {
                 keyboardType="decimal-pad"
               />
 
-              {/* Pourcentage de réussite */}
-              <Text style={styles.inputLabel}>Taux de réussite (%)</Text>
+              <Text style={styles.inputLabel}>Success Rate (%)</Text>
               <TextInput
                 style={styles.input}
                 placeholder="Ex: 85"
@@ -832,11 +885,10 @@ export default function AdminScreen() {
                 keyboardType="number-pad"
               />
 
-              {/* Conseil */}
-              <Text style={styles.inputLabel}>Conseil (optionnel)</Text>
+              <Text style={styles.inputLabel}>Advice (Optional)</Text>
               <TextInput
                 style={[styles.input, styles.textArea]}
-                placeholder="Ajoutez un conseil ou une analyse"
+                placeholder="Add analysis or advice"
                 placeholderTextColor={theme.colors.textMuted}
                 value={newPrediction.advice}
                 onChangeText={(text) => setNewPrediction({ ...newPrediction, advice: text })}
@@ -845,41 +897,41 @@ export default function AdminScreen() {
               />
 
               <Pressable style={styles.submitButton} onPress={handleCreatePrediction}>
-                <MaterialIcons name="check-circle" size={20} color="#000" />
-                <Text style={styles.submitButtonText}>Créer et notifier tous les utilisateurs</Text>
+                <MaterialIcons name="check-circle" size={20} color="#FFF" />
+                <Text style={styles.submitButtonText}>Create Prediction</Text>
               </Pressable>
             </ScrollView>
           </View>
         </View>
       </Modal>
 
-      {/* Custom Notification Modal */}
+      {/* Push Notification Modal */}
       <Modal visible={showNotificationModal} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Envoyer une notification</Text>
+              <Text style={styles.modalTitle}>Send Push Notification</Text>
               <Pressable onPress={() => setShowNotificationModal(false)}>
                 <MaterialIcons name="close" size={24} color={theme.colors.textPrimary} />
               </Pressable>
             </View>
 
             <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
-              <Text style={styles.inputLabel}>Type de notification</Text>
+              <Text style={styles.inputLabel}>Notification Type</Text>
               <View style={styles.notifTypeSelector}>
                 {(['info', 'success', 'warning', 'prediction'] as const).map((type) => (
                   <Pressable
                     key={type}
                     style={[
                       styles.notifTypeOption,
-                      customNotification.type === type && styles.notifTypeOptionActive,
+                      pushNotification.type === type && styles.notifTypeOptionActive,
                     ]}
-                    onPress={() => setCustomNotification({ ...customNotification, type })}
+                    onPress={() => setPushNotification({ ...pushNotification, type })}
                   >
                     <Text
                       style={[
                         styles.notifTypeText,
-                        customNotification.type === type && styles.notifTypeTextActive,
+                        pushNotification.type === type && styles.notifTypeTextActive,
                       ]}
                     >
                       {type.toUpperCase()}
@@ -888,29 +940,29 @@ export default function AdminScreen() {
                 ))}
               </View>
 
-              <Text style={styles.inputLabel}>Titre *</Text>
+              <Text style={styles.inputLabel}>Title *</Text>
               <TextInput
                 style={styles.input}
-                placeholder="Ex: Nouveau match disponible"
+                placeholder="Ex: New Prediction Available"
                 placeholderTextColor={theme.colors.textMuted}
-                value={customNotification.title}
-                onChangeText={(text) => setCustomNotification({ ...customNotification, title: text })}
+                value={pushNotification.title}
+                onChangeText={(text) => setPushNotification({ ...pushNotification, title: text })}
               />
 
               <Text style={styles.inputLabel}>Message *</Text>
               <TextInput
                 style={[styles.input, styles.textArea]}
-                placeholder="Votre message personnalisé..."
+                placeholder="Your custom message..."
                 placeholderTextColor={theme.colors.textMuted}
-                value={customNotification.message}
-                onChangeText={(text) => setCustomNotification({ ...customNotification, message: text })}
+                value={pushNotification.message}
+                onChangeText={(text) => setPushNotification({ ...pushNotification, message: text })}
                 multiline
                 numberOfLines={4}
               />
 
-              <Pressable style={styles.submitButton} onPress={handleSendNotification}>
-                <MaterialIcons name="send" size={20} color="#000" />
-                <Text style={styles.submitButtonText}>Envoyer à tous les utilisateurs</Text>
+              <Pressable style={styles.submitButton} onPress={handleSendPushNotification}>
+                <MaterialIcons name="send" size={20} color="#FFF" />
+                <Text style={styles.submitButtonText}>Send to All Users</Text>
               </Pressable>
             </ScrollView>
           </View>
@@ -922,7 +974,7 @@ export default function AdminScreen() {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Gérer l'utilisateur</Text>
+              <Text style={styles.modalTitle}>Manage User</Text>
               <Pressable onPress={() => setShowUserModal(false)}>
                 <MaterialIcons name="close" size={24} color={theme.colors.textPrimary} />
               </Pressable>
@@ -931,35 +983,35 @@ export default function AdminScreen() {
             <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
               <Text style={styles.userModalName}>{selectedUser?.email}</Text>
 
-              <Text style={styles.sectionLabel}>Statut VIP</Text>
+              <Text style={styles.sectionLabel}>VIP Status - UPDATED PRICES</Text>
               <View style={styles.vipActions}>
                 <Pressable
                   style={styles.vipActionButton}
                   onPress={() => selectedUser && handleUpdateVip(selectedUser.id, true, 7)}
                 >
-                  <MaterialIcons name="workspace-premium" size={18} color="#000" />
-                  <Text style={styles.vipActionText}>VIP 1 semaine</Text>
+                  <MaterialIcons name="workspace-premium" size={18} color="#FFF" />
+                  <Text style={styles.vipActionText}>VIP 1 Week - $25</Text>
                 </Pressable>
                 <Pressable
                   style={styles.vipActionButton}
                   onPress={() => selectedUser && handleUpdateVip(selectedUser.id, true, 30)}
                 >
-                  <MaterialIcons name="workspace-premium" size={18} color="#000" />
-                  <Text style={styles.vipActionText}>VIP 1 mois</Text>
+                  <MaterialIcons name="workspace-premium" size={18} color="#FFF" />
+                  <Text style={styles.vipActionText}>VIP 1 Month - $45</Text>
                 </Pressable>
                 <Pressable
                   style={styles.vipActionButton}
-                  onPress={() => selectedUser && handleUpdateVip(selectedUser.id, true, 90)}
+                  onPress={() => selectedUser && handleUpdateVip(selectedUser.id, true, 365)}
                 >
-                  <MaterialIcons name="workspace-premium" size={18} color="#000" />
-                  <Text style={styles.vipActionText}>VIP 3 mois</Text>
+                  <MaterialIcons name="workspace-premium" size={18} color="#FFF" />
+                  <Text style={styles.vipActionText}>VIP 1 Year - $80</Text>
                 </Pressable>
                 <Pressable
                   style={[styles.vipActionButton, styles.vipActionButtonDanger]}
                   onPress={() => selectedUser && handleUpdateVip(selectedUser.id, false)}
                 >
-                  <MaterialIcons name="block" size={18} color="#fff" />
-                  <Text style={[styles.vipActionText, { color: '#fff' }]}>Révoquer VIP</Text>
+                  <MaterialIcons name="block" size={18} color="#FFF" />
+                  <Text style={styles.vipActionText}>Revoke VIP</Text>
                 </Pressable>
               </View>
 
@@ -970,8 +1022,16 @@ export default function AdminScreen() {
               >
                 <MaterialIcons name={selectedUser?.banned ? 'check-circle' : 'block'} size={20} color="#fff" />
                 <Text style={styles.dangerButtonText}>
-                  {selectedUser?.banned ? 'Débannir l\'utilisateur' : 'Bannir l\'utilisateur'}
+                  {selectedUser?.banned ? 'Unban User' : 'Ban User'}
                 </Text>
+              </Pressable>
+
+              <Pressable
+                style={[styles.dangerButton, { marginTop: theme.spacing.sm }]}
+                onPress={() => selectedUser && handleDeleteUser(selectedUser.id)}
+              >
+                <MaterialIcons name="delete-forever" size={20} color="#fff" />
+                <Text style={styles.dangerButtonText}>Delete User</Text>
               </Pressable>
             </ScrollView>
           </View>
@@ -991,20 +1051,17 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: theme.spacing.md,
-    paddingVertical: theme.spacing.md,
-    backgroundColor: theme.colors.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
-    ...theme.shadows.small,
+    paddingVertical: theme.spacing.lg,
+    ...theme.shadows.medium,
   },
   title: {
     fontSize: theme.fontSize.xxl,
     fontWeight: theme.fontWeight.bold,
-    color: theme.colors.textPrimary,
+    color: '#FFF',
   },
   subtitle: {
     fontSize: theme.fontSize.sm,
-    color: theme.colors.textMuted,
+    color: 'rgba(255, 255, 255, 0.9)',
   },
   tabsContainer: {
     maxHeight: 56,
@@ -1013,9 +1070,9 @@ const styles = StyleSheet.create({
     borderBottomColor: theme.colors.border,
   },
   tabs: {
-    paddingHorizontal: 4,
-    paddingVertical: 4,
-    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 8,
+    gap: 8,
   },
   tab: {
     flexDirection: 'row',
@@ -1023,10 +1080,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: theme.spacing.md,
     paddingVertical: theme.spacing.sm,
     borderRadius: theme.borderRadius.md,
-    gap: 4,
+    gap: 6,
+    backgroundColor: theme.colors.surfaceLight,
   },
   tabActive: {
-    backgroundColor: theme.colors.surfaceLight,
+    backgroundColor: theme.colors.surface,
+    borderWidth: 2,
+    borderColor: theme.colors.primary,
   },
   tabText: {
     fontSize: theme.fontSize.sm,
@@ -1058,13 +1118,17 @@ const styles = StyleSheet.create({
     borderColor: theme.colors.border,
     ...theme.shadows.small,
   },
+  statCardPrimary: {
+    backgroundColor: theme.colors.primary,
+    borderColor: theme.colors.primary,
+  },
   statCardLarge: {
     width: '100%',
     backgroundColor: theme.colors.surface,
-    borderRadius: theme.borderRadius.lg,
+    borderRadius: theme.borderRadius.xl,
     padding: theme.spacing.lg,
     alignItems: 'center',
-    gap: theme.spacing.xs,
+    gap: theme.spacing.sm,
     borderWidth: 1,
     borderColor: theme.colors.border,
     ...theme.shadows.medium,
@@ -1074,8 +1138,13 @@ const styles = StyleSheet.create({
     fontWeight: theme.fontWeight.bold,
     color: theme.colors.textPrimary,
   },
+  statValueWhite: {
+    fontSize: theme.fontSize.xxl,
+    fontWeight: theme.fontWeight.bold,
+    color: '#FFF',
+  },
   statValueLarge: {
-    fontSize: theme.fontSize.xxxl,
+    fontSize: 40,
     fontWeight: theme.fontWeight.bold,
     color: theme.colors.success,
   },
@@ -1084,10 +1153,16 @@ const styles = StyleSheet.create({
     color: theme.colors.textMuted,
     textAlign: 'center',
   },
+  statLabelWhite: {
+    fontSize: theme.fontSize.xs,
+    color: 'rgba(255, 255, 255, 0.9)',
+    textAlign: 'center',
+  },
   statLabelLarge: {
     fontSize: theme.fontSize.sm,
     color: theme.colors.textMuted,
     textAlign: 'center',
+    fontWeight: theme.fontWeight.medium,
   },
   createButton: {
     flexDirection: 'row',
@@ -1098,12 +1173,12 @@ const styles = StyleSheet.create({
     padding: theme.spacing.md,
     marginBottom: theme.spacing.md,
     gap: theme.spacing.sm,
-    ...theme.shadows.medium,
+    ...theme.shadows.blue,
   },
   createButtonText: {
     fontSize: theme.fontSize.md,
     fontWeight: theme.fontWeight.bold,
-    color: '#000',
+    color: '#FFF',
   },
   predictionCard: {
     backgroundColor: theme.colors.surface,
@@ -1118,7 +1193,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 4,
+    marginBottom: 6,
   },
   predictionChampionship: {
     fontSize: theme.fontSize.xs,
@@ -1138,7 +1213,7 @@ const styles = StyleSheet.create({
   categoryText: {
     fontSize: theme.fontSize.xs,
     fontWeight: theme.fontWeight.bold,
-    color: '#000',
+    color: '#FFF',
   },
   predictionMatch: {
     fontSize: theme.fontSize.md,
@@ -1187,6 +1262,60 @@ const styles = StyleSheet.create({
     fontWeight: theme.fontWeight.bold,
     color: '#fff',
   },
+  searchContainer: {
+    marginBottom: theme.spacing.md,
+  },
+  searchInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.borderRadius.md,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
+    gap: theme.spacing.sm,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: theme.fontSize.md,
+    color: theme.colors.textPrimary,
+    includeFontPadding: false,
+  },
+  filterContainer: {
+    maxHeight: 48,
+    marginBottom: theme.spacing.sm,
+  },
+  filterContent: {
+    gap: 8,
+    paddingVertical: 4,
+  },
+  filterChip: {
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.xs,
+    borderRadius: theme.borderRadius.full,
+    backgroundColor: theme.colors.surface,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  filterChipActive: {
+    backgroundColor: theme.colors.primary,
+    borderColor: theme.colors.primary,
+  },
+  filterChipText: {
+    fontSize: theme.fontSize.sm,
+    fontWeight: theme.fontWeight.semibold,
+    color: theme.colors.textMuted,
+  },
+  filterChipTextActive: {
+    color: '#FFF',
+  },
+  userCount: {
+    fontSize: theme.fontSize.xs,
+    color: theme.colors.textMuted,
+    marginBottom: theme.spacing.sm,
+    fontWeight: theme.fontWeight.medium,
+  },
   userCard: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -1224,7 +1353,7 @@ const styles = StyleSheet.create({
   vipBadgeText: {
     fontSize: theme.fontSize.xs,
     fontWeight: theme.fontWeight.bold,
-    color: '#000',
+    color: '#FFF',
   },
   adminBadgeSmall: {
     paddingHorizontal: 8,
@@ -1247,6 +1376,38 @@ const styles = StyleSheet.create({
     fontSize: theme.fontSize.xs,
     fontWeight: theme.fontWeight.bold,
     color: '#fff',
+  },
+  loadMoreButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.borderRadius.md,
+    padding: theme.spacing.md,
+    marginTop: theme.spacing.sm,
+    gap: theme.spacing.xs,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  loadMoreText: {
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.primary,
+    fontWeight: theme.fontWeight.semibold,
+  },
+  loadingContainer: {
+    padding: theme.spacing.md,
+    alignItems: 'center',
+  },
+  loadingText: {
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.textMuted,
+  },
+  endOfListText: {
+    fontSize: theme.fontSize.xs,
+    color: theme.colors.textMuted,
+    textAlign: 'center',
+    marginTop: theme.spacing.md,
+    fontStyle: 'italic',
   },
   historyCard: {
     backgroundColor: theme.colors.surface,
@@ -1329,6 +1490,30 @@ const styles = StyleSheet.create({
     fontSize: theme.fontSize.xs,
     color: theme.colors.textMuted,
   },
+  infoCard: {
+    flexDirection: 'row',
+    backgroundColor: theme.colors.surfaceLight,
+    borderRadius: theme.borderRadius.lg,
+    padding: theme.spacing.md,
+    marginBottom: theme.spacing.md,
+    gap: theme.spacing.md,
+    borderLeftWidth: 4,
+    borderLeftColor: theme.colors.info,
+  },
+  infoTextContainer: {
+    flex: 1,
+  },
+  infoTitle: {
+    fontSize: theme.fontSize.md,
+    fontWeight: theme.fontWeight.semibold,
+    color: theme.colors.textPrimary,
+    marginBottom: 4,
+  },
+  infoText: {
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.textSecondary,
+    lineHeight: 20,
+  },
   emptyContainer: {
     alignItems: 'center',
     justifyContent: 'center',
@@ -1347,8 +1532,8 @@ const styles = StyleSheet.create({
   },
   modalContent: {
     backgroundColor: theme.colors.surface,
-    borderTopLeftRadius: theme.borderRadius.xl,
-    borderTopRightRadius: theme.borderRadius.xl,
+    borderTopLeftRadius: theme.borderRadius.xxl,
+    borderTopRightRadius: theme.borderRadius.xxl,
     maxHeight: '90%',
   },
   modalHeader: {
@@ -1397,7 +1582,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: theme.colors.border,
     paddingHorizontal: theme.spacing.md,
-    marginBottom: 4,
+    marginBottom: theme.spacing.sm,
   },
   dateIcon: {
     marginRight: theme.spacing.sm,
@@ -1407,12 +1592,6 @@ const styles = StyleSheet.create({
     padding: theme.spacing.md,
     fontSize: theme.fontSize.md,
     color: theme.colors.textPrimary,
-  },
-  dateHint: {
-    fontSize: theme.fontSize.xs,
-    color: theme.colors.textMuted,
-    marginBottom: theme.spacing.sm,
-    fontStyle: 'italic',
   },
   categorySelector: {
     flexDirection: 'row',
@@ -1438,7 +1617,7 @@ const styles = StyleSheet.create({
     color: theme.colors.textMuted,
   },
   categoryOptionTextActive: {
-    color: '#000',
+    color: '#FFF',
   },
   sectionSelector: {
     gap: 6,
@@ -1463,7 +1642,7 @@ const styles = StyleSheet.create({
     color: theme.colors.textMuted,
   },
   sectionOptionTextActive: {
-    color: '#000',
+    color: '#FFF',
   },
   notifTypeSelector: {
     flexDirection: 'row',
@@ -1489,7 +1668,7 @@ const styles = StyleSheet.create({
     color: theme.colors.textMuted,
   },
   notifTypeTextActive: {
-    color: '#000',
+    color: '#FFF',
   },
   submitButton: {
     flexDirection: 'row',
@@ -1500,12 +1679,12 @@ const styles = StyleSheet.create({
     padding: theme.spacing.md,
     marginTop: theme.spacing.md,
     gap: theme.spacing.sm,
-    ...theme.shadows.medium,
+    ...theme.shadows.blue,
   },
   submitButtonText: {
     fontSize: theme.fontSize.md,
     fontWeight: theme.fontWeight.bold,
-    color: '#000',
+    color: '#FFF',
   },
   userModalName: {
     fontSize: theme.fontSize.lg,
@@ -1539,7 +1718,7 @@ const styles = StyleSheet.create({
   vipActionText: {
     fontSize: theme.fontSize.sm,
     fontWeight: theme.fontWeight.bold,
-    color: '#000',
+    color: '#FFF',
   },
   dangerButton: {
     flexDirection: 'row',
@@ -1554,83 +1733,5 @@ const styles = StyleSheet.create({
     fontSize: theme.fontSize.md,
     fontWeight: theme.fontWeight.bold,
     color: '#fff',
-  },
-  searchContainer: {
-    marginBottom: theme.spacing.md,
-  },
-  searchInputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: theme.colors.surface,
-    borderRadius: theme.borderRadius.md,
-    paddingHorizontal: theme.spacing.md,
-    paddingVertical: theme.spacing.sm,
-    gap: theme.spacing.sm,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: theme.fontSize.md,
-    color: theme.colors.textPrimary,
-    includeFontPadding: false,
-  },
-  filterContainer: {
-    maxHeight: 48,
-    marginBottom: theme.spacing.sm,
-  },
-  filterContent: {
-    gap: 8,
-    paddingVertical: 4,
-  },
-  filterChip: {
-    paddingHorizontal: theme.spacing.md,
-    paddingVertical: theme.spacing.xs,
-    borderRadius: theme.borderRadius.full,
-    backgroundColor: theme.colors.surface,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-  },
-  filterChipActive: {
-    backgroundColor: theme.colors.primary,
-    borderColor: theme.colors.primary,
-  },
-  filterChipText: {
-    fontSize: theme.fontSize.sm,
-    fontWeight: theme.fontWeight.semibold,
-    color: theme.colors.textMuted,
-  },
-  filterChipTextActive: {
-    color: '#000',
-  },
-  userCount: {
-    fontSize: theme.fontSize.xs,
-    color: theme.colors.textMuted,
-    marginBottom: theme.spacing.sm,
-    fontWeight: theme.fontWeight.medium,
-  },
-  loadMoreButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: theme.colors.surface,
-    borderRadius: theme.borderRadius.md,
-    padding: theme.spacing.md,
-    marginTop: theme.spacing.sm,
-    gap: theme.spacing.xs,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-  },
-  loadMoreText: {
-    fontSize: theme.fontSize.sm,
-    color: theme.colors.primary,
-    fontWeight: theme.fontWeight.semibold,
-  },
-  endOfListText: {
-    fontSize: theme.fontSize.xs,
-    color: theme.colors.textMuted,
-    textAlign: 'center',
-    marginTop: theme.spacing.md,
-    fontStyle: 'italic',
   },
 });

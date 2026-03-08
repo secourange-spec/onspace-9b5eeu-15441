@@ -1,33 +1,35 @@
-// MODDESS TIPS - Design System (Thème Clair)
+// MODDESS TIPS - Professional Blue & White Design System
 
 export const theme = {
   colors: {
     // Background colors
-    background: '#F8FAFC',          // Gris très clair
-    surface: '#FFFFFF',             // Blanc pur
-    surfaceLight: '#F1F5F9',        // Gris clair
+    background: '#F8FAFC',          // Light gray background
+    surface: '#FFFFFF',             // Pure white
+    surfaceLight: '#EFF6FF',        // Light blue tint
     
     // Text colors
-    textPrimary: '#0F172A',         // Noir bleuté
-    textSecondary: '#475569',       // Gris foncé
-    textMuted: '#94A3B8',           // Gris moyen
+    textPrimary: '#0F172A',         // Dark blue-black
+    textSecondary: '#475569',       // Medium gray
+    textMuted: '#94A3B8',           // Light gray
     
-    // Brand colors
-    primary: '#FFD700',             // Or
-    primaryDark: '#FFC700',         // Or foncé
-    vipGold: '#FFD700',             // Or VIP
-    vipGradientStart: '#FFD700',    // Dégradé or début
-    vipGradientEnd: '#FFA500',      // Dégradé or fin
+    // Brand colors - BLUE THEME
+    primary: '#1E40AF',             // Deep blue (primary)
+    primaryLight: '#3B82F6',        // Bright blue
+    primaryDark: '#1E3A8A',         // Dark blue
+    vipBlue: '#3B82F6',             // VIP blue
+    vipGradientStart: '#1E40AF',    // Gradient start
+    vipGradientEnd: '#3B82F6',      // Gradient end
     
     // Semantic colors
-    success: '#10B981',             // Vert
-    error: '#EF4444',               // Rouge
+    success: '#10B981',             // Green
+    error: '#EF4444',               // Red
     warning: '#F59E0B',             // Orange
-    info: '#3B82F6',                // Bleu
+    info: '#3B82F6',                // Blue
     
     // UI colors
-    border: '#E2E8F0',              // Bordure claire
-    overlay: 'rgba(0, 0, 0, 0.5)',  // Overlay foncé
+    border: '#E2E8F0',              // Light border
+    overlay: 'rgba(0, 0, 0, 0.5)',  // Dark overlay
+    badge: '#DC2626',               // Red badge for notifications
   },
   
   spacing: {
@@ -61,6 +63,7 @@ export const theme = {
     md: 8,
     lg: 12,
     xl: 16,
+    xxl: 24,
     full: 999,
   },
   
@@ -86,10 +89,10 @@ export const theme = {
       shadowRadius: 8,
       elevation: 4,
     },
-    gold: {
-      shadowColor: '#FFD700',
+    blue: {
+      shadowColor: '#1E40AF',
       shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.3,
+      shadowOpacity: 0.2,
       shadowRadius: 8,
       elevation: 4,
     },

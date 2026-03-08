@@ -64,7 +64,7 @@ export const predictionsService = {
     }
   },
 
-  // Create prediction (admin only)
+  // Create prediction (admin only) - NO AUTO-NOTIFICATION
   async createPrediction(prediction: Omit<Prediction, 'id' | 'created_at'>): Promise<{ data: Prediction | null; error: string | null }> {
     try {
       const { data, error } = await supabase
@@ -74,6 +74,7 @@ export const predictionsService = {
         .single();
       
       if (error) throw error;
+      // Note: Auto-notification removed - admin will send push notifications manually
       return { data, error: null };
     } catch (error: any) {
       return { data: null, error: error.message };

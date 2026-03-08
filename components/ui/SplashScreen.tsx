@@ -1,136 +1,216 @@
-// MODDESS TIPS - Professional Splash Screen
+// MODDESS TIPS - Professional Animated Splash Screen
 import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Animated } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
+import { View, StyleSheet, Animated, Dimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Image } from 'expo-image';
 import { theme } from '@/constants/theme';
 
+const { width, height } = Dimensions.get('window');
+
 export default function SplashScreen() {
+  // Animation values
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.3)).current;
   const rotateAnim = useRef(new Animated.Value(0)).current;
+  
+  // Text animations
+  const leftTextAnim = useRef(new Animated.Value(-width)).current;
+  const rightTextAnim = useRef(new Animated.Value(width)).current;
+  const mergeAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    // Parallel animations
+    // Logo animation
     Animated.parallel([
-      // Fade in
       Animated.timing(fadeAnim, {
         toValue: 1,
         duration: 800,
         useNativeDriver: true,
       }),
-      // Scale up
       Animated.spring(scaleAnim, {
         toValue: 1,
         friction: 4,
         tension: 40,
         useNativeDriver: true,
       }),
-      // Rotate
       Animated.timing(rotateAnim, {
         toValue: 1,
-        duration: 1200,
+        duration: 1000,
         useNativeDriver: true,
       }),
     ]).start();
+
+    // Text fusion animation
+    setTimeout(() => {
+      Animated.sequence([
+        // Move texts from sides
+        Animated.parallel([
+          Animated.timing(leftTextAnim, {
+            toValue: 0,
+            duration: 600,
+            useNativeDriver: true,
+          }),
+          Animated.timing(rightTextAnim, {
+            toValue: 0,
+            duration: 600,
+            useNativeDriver: true,
+          }),
+        ]),
+        // Merge effect
+        Animated.timing(mergeAnim, {
+          toValue: 1,
+          duration: 400,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    }, 500);
   }, []);
 
-  const rotate = rotateAnim.interpolate({
+  const spin = rotateAnim.interpolate({
     inputRange: [0, 1],
     outputRange: ['0deg', '360deg'],
   });
 
   return (
-    <View style={styles.container}>
-      <LinearGradient
-        colors={[theme.colors.vipGradientStart, theme.colors.vipGradientEnd]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.gradient}
-      >
+    <LinearGradient
+      colors={[theme.colors.vipGradientStart, theme.colors.vipGradientEnd]}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+      style={styles.container}
+    >
+      <View style={styles.content}>
+        {/* Logo */}
         <Animated.View
           style={[
-            styles.iconContainer,
+            styles.logoContainer,
             {
               opacity: fadeAnim,
-              transform: [{ scale: scaleAnim }, { rotate }],
+              transform: [
+                { scale: scaleAnim },
+                { rotate: spin },
+              ],
             },
           ]}
         >
-          <MaterialIcons name="sports-soccer" size={80} color="#000" />
-        </Animated.View>
-        
-        <Animated.View style={{ opacity: fadeAnim }}>
-          <Text style={styles.title}>MODDESS TIPS</Text>
-          <Text style={styles.subtitle}>Pronostics Sportifs Premium</Text>
+          <Image
+            source={require('@/assets/images/logo.png')}
+            style={styles.logo}
+            contentFit="contain"
+            transition={200}
+          />
         </Animated.View>
 
-        <Animated.View style={[styles.loadingContainer, { opacity: fadeAnim }]}>
-          <View style={styles.loadingBar}>
-            <Animated.View
+        {/* Animated Text */}
+        <View style={styles.textContainer}>
+          <Animated.View
+            style={[
+              styles.textWrapper,
+              {
+                opacity: mergeAnim,
+                transform: [
+                  {
+                    translateX: Animated.add(leftTextAnim, rightTextAnim).interpolate({
+                      inputRange: [-width, 0],
+                      outputRange: [0, 0],
+                    }),
+                  },
+                ],
+              },
+            ]}
+          >
+            <Animated.Text
               style={[
-                styles.loadingProgress,
+                styles.appName,
                 {
-                  width: fadeAnim.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: ['0%', '100%'],
-                  }),
+                  transform: [{ translateX: leftTextAnim }],
+                  opacity: fadeAnim,
                 },
               ]}
-            />
-          </View>
-        </Animated.View>
-      </LinearGradient>
-    </View>
+            >
+              MODDESS
+            </Animated.Text>
+            <Animated.Text
+              style={[
+                styles.appName,
+                styles.appNameRight,
+                {
+                  transform: [{ translateX: rightTextAnim }],
+                  opacity: fadeAnim,
+                },
+              ]}
+            >
+              {' '}TIPS
+            </Animated.Text>
+          </Animated.View>
+        </View>
+
+        {/* Tagline */}
+        <Animated.Text
+          style={[
+            styles.tagline,
+            {
+              opacity: mergeAnim,
+            },
+          ]}
+        >
+          Professional Sports Predictions
+        </Animated.Text>
+      </View>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  gradient: {
-    flex: 1,
+  content: {
     alignItems: 'center',
     justifyContent: 'center',
   },
-  iconContainer: {
-    width: 140,
-    height: 140,
-    borderRadius: 70,
-    backgroundColor: 'rgba(0,0,0,0.1)',
+  logoContainer: {
+    width: 120,
+    height: 120,
+    borderRadius: 30,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 32,
+    ...theme.shadows.large,
+  },
+  logo: {
+    width: 100,
+    height: 100,
+  },
+  textContainer: {
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: theme.spacing.xl,
+    marginBottom: 12,
+    height: 60,
   },
-  title: {
-    fontSize: 32,
-    fontWeight: theme.fontWeight.bold,
-    color: '#000',
-    textAlign: 'center',
-    marginBottom: theme.spacing.xs,
+  textWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  appName: {
+    fontSize: 36,
+    fontWeight: '900',
+    color: '#FFFFFF',
     letterSpacing: 2,
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
   },
-  subtitle: {
-    fontSize: theme.fontSize.md,
-    color: '#000',
-    opacity: 0.8,
-    textAlign: 'center',
-    marginBottom: theme.spacing.xxl,
+  appNameRight: {
+    color: '#E0F2FE',
   },
-  loadingContainer: {
-    position: 'absolute',
-    bottom: 60,
-    width: '60%',
-  },
-  loadingBar: {
-    height: 4,
-    backgroundColor: 'rgba(0,0,0,0.2)',
-    borderRadius: 2,
-    overflow: 'hidden',
-  },
-  loadingProgress: {
-    height: '100%',
-    backgroundColor: '#000',
+  tagline: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: 'rgba(255, 255, 255, 0.9)',
+    letterSpacing: 1,
+    textTransform: 'uppercase',
   },
 });

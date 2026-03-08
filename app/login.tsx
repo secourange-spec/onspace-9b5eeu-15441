@@ -1,5 +1,8 @@
 // MODDESS TIPS - Login/Register Screen
-import React, { useState } from 'react';
+
+const ONBOARDING_KEY = '@moddess_onboarding_complete';
+import React, { useState, useEffect } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { View, Text, TextInput, StyleSheet, Pressable, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { useAuth, useAlert } from '@/template';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -13,6 +16,11 @@ export default function AuthScreen() {
   const { showAlert } = useAlert();
   const insets = useSafeAreaInsets();
 
+  // Mark onboarding as complete when reaching login
+  useEffect(() => {
+    AsyncStorage.setItem(ONBOARDING_KEY, 'true');
+  }, []);
+
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -22,51 +30,51 @@ export default function AuthScreen() {
 
   const handleLogin = async () => {
     if (!email || !password) {
-      showAlert('Erreur', 'Veuillez remplir tous les champs');
+      showAlert('Error', 'Please fill in all fields');
       return;
     }
 
     const { error } = await signInWithPassword(email, password);
     if (error) {
-      showAlert('Erreur de connexion', error);
+      showAlert('Login Error', error);
     }
   };
 
   const handleSendOTP = async () => {
     if (!email || !password || !confirmPassword) {
-      showAlert('Erreur', 'Veuillez remplir tous les champs');
+      showAlert('Error', 'Please fill in all fields');
       return;
     }
 
     if (password !== confirmPassword) {
-      showAlert('Erreur', 'Les mots de passe ne correspondent pas');
+      showAlert('Error', 'Passwords do not match');
       return;
     }
 
     if (password.length < 6) {
-      showAlert('Erreur', 'Le mot de passe doit contenir au moins 6 caractères');
+      showAlert('Error', 'Password must be at least 6 characters');
       return;
     }
 
     const { error } = await sendOTP(email);
     if (error) {
-      showAlert('Erreur', error);
+      showAlert('Error', error);
       return;
     }
 
     setOtpSent(true);
-    showAlert('Code envoyé', 'Un code de vérification a été envoyé à votre email');
+    showAlert('Code Sent', 'A verification code has been sent to your email');
   };
 
   const handleVerifyOTP = async () => {
     if (!otp) {
-      showAlert('Erreur', 'Veuillez entrer le code de vérification');
+      showAlert('Error', 'Please enter the verification code');
       return;
     }
 
     const { error } = await verifyOTPAndLogin(email, otp, { password });
     if (error) {
-      showAlert('Erreur', error);
+      showAlert('Error', error);
     }
   };
 
@@ -90,7 +98,7 @@ export default function AuthScreen() {
             <MaterialIcons name="sports-soccer" size={40} color="#000" />
           </LinearGradient>
           <Text style={styles.title}>{APP_CONFIG.appName}</Text>
-          <Text style={styles.subtitle}>{APP_CONFIG.tagline}</Text>
+          <Text style={styles.subtitle}>Professional Sports Predictions</Text>
         </View>
 
         {/* Form */}
@@ -105,7 +113,7 @@ export default function AuthScreen() {
                 setOtp('');
               }}
             >
-              <Text style={[styles.tabText, isLogin && styles.tabTextActive]}>Connexion</Text>
+              <Text style={[styles.tabText, isLogin && styles.tabTextActive]}>Login</Text>
             </Pressable>
             <Pressable
               style={[styles.tab, !isLogin && styles.tabActive]}
@@ -115,7 +123,7 @@ export default function AuthScreen() {
                 setOtp('');
               }}
             >
-              <Text style={[styles.tabText, !isLogin && styles.tabTextActive]}>Inscription</Text>
+              <Text style={[styles.tabText, !isLogin && styles.tabTextActive]}>Sign Up</Text>
             </Pressable>
           </View>
 
@@ -144,7 +152,7 @@ export default function AuthScreen() {
               <MaterialIcons name="lock" size={20} color={theme.colors.textMuted} />
               <TextInput
                 style={styles.input}
-                placeholder="Minimum 6 caractères"
+                placeholder="Minimum 6 characters"
                 placeholderTextColor={theme.colors.textMuted}
                 value={password}
                 onChangeText={setPassword}
@@ -157,12 +165,12 @@ export default function AuthScreen() {
           {/* Confirm Password (Register only) */}
           {!isLogin && !otpSent && (
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Confirmer mot de passe</Text>
+              <Text style={styles.label}>Confirm Password</Text>
               <View style={styles.inputContainer}>
                 <MaterialIcons name="lock" size={20} color={theme.colors.textMuted} />
                 <TextInput
                   style={styles.input}
-                  placeholder="Confirmer votre mot de passe"
+                  placeholder="Confirm your password"
                   placeholderTextColor={theme.colors.textMuted}
                   value={confirmPassword}
                   onChangeText={setConfirmPassword}
@@ -175,12 +183,12 @@ export default function AuthScreen() {
           {/* OTP Input (Register only after OTP sent) */}
           {!isLogin && otpSent && (
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Code de vérification</Text>
+              <Text style={styles.label}>Verification Code</Text>
               <View style={styles.inputContainer}>
                 <MaterialIcons name="verified" size={20} color={theme.colors.textMuted} />
                 <TextInput
                   style={styles.input}
-                  placeholder="Entrez le code à 4 chiffres"
+                  placeholder="Enter 4-digit code"
                   placeholderTextColor={theme.colors.textMuted}
                   value={otp}
                   onChangeText={setOtp}
@@ -216,10 +224,10 @@ export default function AuthScreen() {
               style={styles.buttonGradient}
             >
               {operationLoading ? (
-                <Text style={styles.buttonText}>Chargement...</Text>
+                <Text style={styles.buttonText}>Loading...</Text>
               ) : (
                 <Text style={styles.buttonText}>
-                  {isLogin ? 'Se connecter' : otpSent ? 'Vérifier le code' : 'Envoyer le code'}
+                  {isLogin ? 'Sign In' : otpSent ? 'Verify Code' : 'Send Code'}
                 </Text>
               )}
             </LinearGradient>
@@ -228,7 +236,7 @@ export default function AuthScreen() {
           {/* OTP Resend */}
           {!isLogin && otpSent && (
             <Pressable style={styles.resendButton} onPress={handleSendOTP}>
-              <Text style={styles.resendText}>Renvoyer le code</Text>
+              <Text style={styles.resendText}>Resend Code</Text>
             </Pressable>
           )}
         </View>
