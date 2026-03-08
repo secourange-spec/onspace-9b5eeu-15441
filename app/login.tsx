@@ -43,7 +43,16 @@ export default function AuthScreen() {
       
       if (error) {
         console.error('[Login] Login failed:', error);
-        showAlert('Login Failed', error);
+        
+        // Show user-friendly error messages
+        if (error.includes('Invalid login credentials') || error.includes('invalid')) {
+          showAlert(
+            'Login Failed',
+            'Incorrect email or password. Please check your credentials and try again.'
+          );
+        } else {
+          showAlert('Login Failed', error);
+        }
         return;
       }
       
@@ -54,6 +63,7 @@ export default function AuthScreen() {
       }
       
       console.log('[Login] ✅ Login successful for:', user.email);
+      // AuthRouter will handle navigation automatically
     } catch (err: any) {
       console.error('[Login] Exception during login:', err);
       showAlert('Error', err.message || 'An unexpected error occurred');
