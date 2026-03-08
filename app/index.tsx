@@ -52,7 +52,7 @@ export default function RootScreen() {
 
   return (
     <AuthRouter loginRoute="/login">
-      <Redirect href="/(tabs)" />
+      <Redirect href="/(tabs)/free" />
     </AuthRouter>
   );
 }
