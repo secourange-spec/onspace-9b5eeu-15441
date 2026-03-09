@@ -47,7 +47,10 @@
           "sounds": [],
           "mode": "production"
         }
-      ]
+      ],
+      "expo-linear-gradient",
+      "@react-native-async-storage/async-storage",
+      "expo-constants"
     ],
     "experiments": {
       "typedRoutes": true
@@ -57,7 +60,7 @@
         "origin": false
       },
       "eas": {
-        "projectId": "your-project-id-here"
+        "projectId": "your-project-id"
       }
     }
   }
