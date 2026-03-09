@@ -43,7 +43,7 @@ export default function HistoryScreen() {
     {
       id: 'score_exact_vip',
       title: 'Correct Score',
-      icon: 'sports-score',
+      icon: 'military-tech',
       color: '#EF4444',
     },
     {

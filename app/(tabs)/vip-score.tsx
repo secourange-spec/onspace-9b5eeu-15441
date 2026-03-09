@@ -1,5 +1,6 @@
-// MODDESS TIPS - VIP Score Exact Category (With Back Button)
+// MODDESS TIPS - VIP Score Exact Category (With Back Button and Auto-Refresh)
 import React, { useState, useEffect } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import { View, Text, StyleSheet, ScrollView, RefreshControl, Pressable } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { theme } from '@/constants/theme';
@@ -32,6 +33,13 @@ export default function VipScoreScreen() {
     loadPredictions();
   }, []);
 
+  // Auto-refresh when screen is focused
+  useFocusEffect(
+    React.useCallback(() => {
+      loadPredictions();
+    }, [])
+  );
+
   const onRefresh = async () => {
     setRefreshing(true);
     await loadPredictions();
@@ -50,7 +58,7 @@ export default function VipScoreScreen() {
           <Text style={styles.subtitle}>Precise score predictions</Text>
         </View>
         <View style={styles.headerRight}>
-          <MaterialIcons name="sports-score" size={24} color="#FFF" />
+          <MaterialIcons name="military-tech" size={24} color="#FFF" />
         </View>
       </View>
 

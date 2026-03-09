@@ -65,28 +65,19 @@ export const notificationsService = {
     }
   },
 
-  // Create notification for all users (admin only) - PUSH NOTIFICATION ENABLED
+  // Create notification for all users (admin only) - GLOBAL NOTIFICATION (user_id = NULL)
   async notifyAllUsers(title: string, message: string, type: Notification['type']): Promise<{ error: string | null }> {
     try {
-      // Get all users
-      const { data: users, error: usersError } = await supabase
-        .from('user_profiles')
-        .select('id');
-      
-      if (usersError) throw usersError;
-      if (!users || users.length === 0) return { error: null };
-
-      // Create notifications for all users
-      const notifications = users.map(user => ({
-        user_id: user.id,
-        title,
-        message,
-        type,
-      }));
-
+      // Create one global notification with user_id = NULL
+      // RLS policy allows all users to see notifications where user_id IS NULL
       const { error } = await supabase
         .from('notifications')
-        .insert(notifications);
+        .insert({
+          user_id: null, // Global notification for all users
+          title,
+          message,
+          type,
+        });
       
       if (error) throw error;
 
