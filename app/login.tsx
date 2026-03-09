@@ -8,6 +8,7 @@ import { theme } from '@/constants/theme';
 import { APP_CONFIG } from '@/constants/config';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 
 const ONBOARDING_KEY = '@moddess_onboarding_complete';
 
@@ -15,6 +16,7 @@ export default function AuthScreen() {
   const { signInWithPassword, signUpWithPassword, sendOTP, verifyOTPAndLogin, operationLoading } = useAuth();
   const { showAlert } = useAlert();
   const insets = useSafeAreaInsets();
+  const router = useRouter();
 
   // Mark onboarding as complete when reaching login
   useEffect(() => {
@@ -37,7 +39,11 @@ export default function AuthScreen() {
     const { error } = await signInWithPassword(email, password);
     if (error) {
       showAlert('Login Error', error);
+      return;
     }
+
+    // Redirect to home after successful login
+    router.replace('/(tabs)');
   };
 
   const handleSendOTP = async () => {
@@ -75,7 +81,11 @@ export default function AuthScreen() {
     const { error } = await verifyOTPAndLogin(email, otp, { password });
     if (error) {
       showAlert('Error', error);
+      return;
     }
+
+    // Redirect to home after successful registration
+    router.replace('/(tabs)');
   };
 
   return (
