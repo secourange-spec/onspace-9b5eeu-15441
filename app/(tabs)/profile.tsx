@@ -22,7 +22,11 @@ export default function ProfileScreen() {
   }, []);
 
   const handleLogout = async () => {
-    await logout();
+    const { error } = await logout();
+    if (!error) {
+      // Redirect immediately to login page after successful logout
+      router.replace('/login');
+    }
   };
 
   const vipExpireDate = profile?.vip_expire_date
