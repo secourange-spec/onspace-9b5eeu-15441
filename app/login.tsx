@@ -1,13 +1,14 @@
-// MODDESS TIPS - Login/Register Screen
+// MODDESS TIPS - Login/Register Screen (ULTRA FIXED)
 import React, { useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { View, Text, TextInput, StyleSheet, Pressable, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { View, Text, TextInput, StyleSheet, Pressable, KeyboardAvoidingView, Platform, ScrollView, Alert } from 'react-native';
 import { useAuth, useAlert } from '@/template';
 import { MaterialIcons } from '@expo/vector-icons';
 import { theme } from '@/constants/theme';
 import { APP_CONFIG } from '@/constants/config';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 
 const ONBOARDING_KEY = '@moddess_onboarding_complete';
 
@@ -15,6 +16,7 @@ export default function AuthScreen() {
   const { signInWithPassword, signUpWithPassword, sendOTP, verifyOTPAndLogin, operationLoading } = useAuth();
   const { showAlert } = useAlert();
   const insets = useSafeAreaInsets();
+  const router = useRouter();
 
   // Mark onboarding as complete when reaching login
   useEffect(() => {
@@ -30,14 +32,26 @@ export default function AuthScreen() {
 
   const handleLogin = async () => {
     if (!email || !password) {
-      showAlert('Error', 'Please fill in all fields');
+      showAlert('Error', 'Please enter email and password');
       return;
     }
 
-    const { error } = await signInWithPassword(email, password);
+    const { error, user } = await signInWithPassword(email.trim().toLowerCase(), password);
+    
     if (error) {
-      showAlert('Login Error', error);
+      // Better error messages
+      if (error.includes('Invalid login credentials')) {
+        showAlert('Login Failed', 'Incorrect email or password. Please check your credentials or sign up for a new account.');
+      } else if (error.includes('Email not confirmed')) {
+        showAlert('Email Not Verified', 'Please check your email and verify your account before logging in.');
+      } else {
+        showAlert('Login Error', error);
+      }
+      return;
     }
+
+    // Success - AuthRouter will handle navigation
+    console.log('Login successful, user:', user?.email);
   };
 
   const handleSendOTP = async () => {
@@ -56,26 +70,44 @@ export default function AuthScreen() {
       return;
     }
 
-    const { error } = await sendOTP(email);
+    const { error } = await sendOTP(email.trim().toLowerCase());
     if (error) {
-      showAlert('Error', error);
+      if (error.includes('User already registered')) {
+        showAlert('Account Exists', 'This email is already registered. Please use the Login tab.');
+        setIsLogin(true);
+      } else {
+        showAlert('Error', error);
+      }
       return;
     }
 
     setOtpSent(true);
-    showAlert('Code Sent', 'A verification code has been sent to your email');
+    showAlert('Code Sent', 'A 4-digit verification code has been sent to your email. Please check your inbox.');
   };
 
   const handleVerifyOTP = async () => {
-    if (!otp) {
-      showAlert('Error', 'Please enter the verification code');
+    if (!otp || otp.length !== 4) {
+      showAlert('Error', 'Please enter the 4-digit verification code');
       return;
     }
 
-    const { error } = await verifyOTPAndLogin(email, otp, { password });
+    const { error, user } = await verifyOTPAndLogin(email.trim().toLowerCase(), otp, { password });
+    
     if (error) {
-      showAlert('Error', error);
+      if (error.includes('Token has expired')) {
+        showAlert('Code Expired', 'The verification code has expired. Please request a new code.');
+        setOtpSent(false);
+        setOtp('');
+      } else if (error.includes('Invalid token')) {
+        showAlert('Invalid Code', 'The verification code is incorrect. Please try again.');
+      } else {
+        showAlert('Error', error);
+      }
+      return;
     }
+
+    // Success - AuthRouter will handle navigation
+    console.log('Registration successful, user:', user?.email);
   };
 
   return (
@@ -86,6 +118,7 @@ export default function AuthScreen() {
       <ScrollView
         contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 20 }]}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
       >
         {/* Header */}
         <View style={styles.header}>
@@ -111,6 +144,9 @@ export default function AuthScreen() {
                 setIsLogin(true);
                 setOtpSent(false);
                 setOtp('');
+                setEmail('');
+                setPassword('');
+                setConfirmPassword('');
               }}
             >
               <Text style={[styles.tabText, isLogin && styles.tabTextActive]}>Login</Text>
@@ -121,6 +157,9 @@ export default function AuthScreen() {
                 setIsLogin(false);
                 setOtpSent(false);
                 setOtp('');
+                setEmail('');
+                setPassword('');
+                setConfirmPassword('');
               }}
             >
               <Text style={[styles.tabText, !isLogin && styles.tabTextActive]}>Sign Up</Text>
@@ -140,7 +179,8 @@ export default function AuthScreen() {
                 onChangeText={setEmail}
                 keyboardType="email-address"
                 autoCapitalize="none"
-                editable={!otpSent}
+                autoCorrect={false}
+                editable={!otpSent && !operationLoading}
               />
             </View>
           </View>
@@ -157,7 +197,7 @@ export default function AuthScreen() {
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry
-                editable={!otpSent}
+                editable={!otpSent && !operationLoading}
               />
             </View>
           </View>
@@ -175,6 +215,7 @@ export default function AuthScreen() {
                   value={confirmPassword}
                   onChangeText={setConfirmPassword}
                   secureTextEntry
+                  editable={!operationLoading}
                 />
               </View>
             </View>
@@ -194,8 +235,10 @@ export default function AuthScreen() {
                   onChangeText={setOtp}
                   keyboardType="number-pad"
                   maxLength={4}
+                  editable={!operationLoading}
                 />
               </View>
+              <Text style={styles.hint}>Check your email for the verification code</Text>
             </View>
           )}
 
@@ -224,10 +267,10 @@ export default function AuthScreen() {
               style={styles.buttonGradient}
             >
               {operationLoading ? (
-                <Text style={styles.buttonText}>Loading...</Text>
+                <Text style={styles.buttonText}>Please wait...</Text>
               ) : (
                 <Text style={styles.buttonText}>
-                  {isLogin ? 'Sign In' : otpSent ? 'Verify Code' : 'Send Code'}
+                  {isLogin ? 'Sign In' : otpSent ? 'Verify & Create Account' : 'Send Verification Code'}
                 </Text>
               )}
             </LinearGradient>
@@ -235,10 +278,24 @@ export default function AuthScreen() {
 
           {/* OTP Resend */}
           {!isLogin && otpSent && (
-            <Pressable style={styles.resendButton} onPress={handleSendOTP}>
+            <Pressable 
+              style={styles.resendButton} 
+              onPress={handleSendOTP}
+              disabled={operationLoading}
+            >
               <Text style={styles.resendText}>Resend Code</Text>
             </Pressable>
           )}
+
+          {/* Help Text */}
+          <View style={styles.helpContainer}>
+            <MaterialIcons name="info-outline" size={16} color={theme.colors.textMuted} />
+            <Text style={styles.helpText}>
+              {isLogin 
+                ? "Don't have an account? Use Sign Up tab" 
+                : 'Already have an account? Use Login tab'}
+            </Text>
+          </View>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -329,6 +386,11 @@ const styles = StyleSheet.create({
     color: theme.colors.textPrimary,
     includeFontPadding: false,
   },
+  hint: {
+    fontSize: theme.fontSize.xs,
+    color: theme.colors.textMuted,
+    fontStyle: 'italic',
+  },
   button: {
     marginTop: theme.spacing.sm,
     borderRadius: theme.borderRadius.md,
@@ -359,5 +421,17 @@ const styles = StyleSheet.create({
     fontSize: theme.fontSize.sm,
     color: theme.colors.primary,
     textDecorationLine: 'underline',
+    fontWeight: theme.fontWeight.semibold,
+  },
+  helpContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingTop: theme.spacing.sm,
+  },
+  helpText: {
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.textMuted,
   },
 });
