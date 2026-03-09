@@ -1,6 +1,6 @@
-// MODDESS TIPS - Profile Screen (FIXED)
-import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, Linking } from 'react-native';
+// MODDESS TIPS - Profile Screen (FIXED v2)
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, Pressable, Linking, ActivityIndicator } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { theme } from '@/constants/theme';
 import { APP_CONFIG } from '@/constants/config';
@@ -12,10 +12,29 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 
 export default function ProfileScreen() {
-  const { profile, isVip, loading, refreshProfile } = useUser();
-  const { logout } = useAuth();
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const [error, setError] = useState<string | null>(null);
+  
+  // Wrap hooks in try-catch
+  let profile = null;
+  let isVip = false;
+  let loading = true;
+  let refreshProfile = async () => {};
+  let logout = async () => {};
+  
+  try {
+    const userHook = useUser();
+    profile = userHook.profile;
+    isVip = userHook.isVip;
+    loading = userHook.loading;
+    refreshProfile = userHook.refreshProfile;
+    
+    const authHook = useAuth();
+    logout = authHook.logout;
+  } catch (err: any) {
+    setError(`Hook error: ${err.message}`);
+  }
 
   // Force reload profile when screen appears
   useEffect(() => {
@@ -34,17 +53,28 @@ export default function ProfileScreen() {
       })
     : null;
 
+  // Error state
+  if (error) {
+    return (
+      <View style={[styles.container, { paddingTop: insets.top, justifyContent: 'center', alignItems: 'center', padding: 20 }]}>
+        <MaterialIcons name="error-outline" size={48} color={theme.colors.error} />
+        <Text style={styles.loadingText}>Error</Text>
+        <Text style={[styles.loadingText, { fontSize: 12, marginTop: 10 }]}>{error}</Text>
+      </View>
+    );
+  }
+
   // Loading state
   if (loading) {
     return (
       <View style={[styles.container, { paddingTop: insets.top, justifyContent: 'center', alignItems: 'center' }]}>
-        <MaterialIcons name="hourglass-empty" size={48} color={theme.colors.textMuted} />
+        <ActivityIndicator size="large" color={theme.colors.primary} />
         <Text style={styles.loadingText}>Loading profile...</Text>
       </View>
     );
   }
 
-  // Error state (no profile loaded)
+  // No profile state
   if (!profile) {
     return (
       <View style={[styles.container, { paddingTop: insets.top, justifyContent: 'center', alignItems: 'center' }]}>
