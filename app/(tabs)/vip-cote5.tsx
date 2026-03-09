@@ -1,4 +1,4 @@
-// MODDESS TIPS - VIP Côte 5 Category (Fixed Navigation + Auto-Refresh)
+// MODDESS TIPS - VIP Côte 5 Category (With Back Button)
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, RefreshControl, Pressable } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -8,7 +8,6 @@ import { predictionsService, Prediction } from '@/services/predictions';
 import { useAlert } from '@/template';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { useFocusEffect } from '@react-navigation/native';
 
 export default function VipCote5Screen() {
   const { showAlert } = useAlert();
@@ -33,13 +32,6 @@ export default function VipCote5Screen() {
     loadPredictions();
   }, []);
 
-  // Auto-refresh when screen becomes active
-  useFocusEffect(
-    React.useCallback(() => {
-      loadPredictions();
-    }, [])
-  );
-
   const onRefresh = async () => {
     setRefreshing(true);
     await loadPredictions();
@@ -50,16 +42,16 @@ export default function VipCote5Screen() {
     <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* Header with Back Button */}
       <View style={styles.header}>
-        <Pressable style={styles.backButton} onPress={() => router.push('/vip')}>
+        <Pressable style={styles.backButton} onPress={() => router.back()}>
           <MaterialIcons name="arrow-back" size={24} color="#FFF" />
         </Pressable>
         <View style={styles.headerContent}>
           <Text style={styles.title}>Odds 5 - VIP</Text>
           <Text style={styles.subtitle}>High-value predictions</Text>
         </View>
-        <Pressable style={styles.refreshButton} onPress={onRefresh}>
-          <MaterialIcons name="refresh" size={24} color="#FFF" />
-        </Pressable>
+        <View style={styles.headerRight}>
+          <MaterialIcons name="stars" size={24} color="#FFF" />
+        </View>
       </View>
 
       <ScrollView
@@ -125,13 +117,7 @@ const styles = StyleSheet.create({
     fontSize: theme.fontSize.xs,
     color: 'rgba(255, 255, 255, 0.9)',
   },
-  refreshButton: {
-    width: 40,
-    height: 40,
-    borderRadius: theme.borderRadius.md,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    alignItems: 'center',
-    justifyContent: 'center',
+  headerRight: {
     marginLeft: theme.spacing.sm,
   },
   content: {

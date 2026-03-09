@@ -1,4 +1,4 @@
-// MODDESS TIPS - Free Accumulation Category (Fixed Navigation + Auto-Refresh)
+// MODDESS TIPS - Free Accumulation Category (With Back Button)
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, RefreshControl, Pressable } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -8,7 +8,6 @@ import { predictionsService, Prediction } from '@/services/predictions';
 import { useAlert } from '@/template';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { useFocusEffect } from '@react-navigation/native';
 
 export default function FreeAccumulationScreen() {
   const { showAlert } = useAlert();
@@ -33,13 +32,6 @@ export default function FreeAccumulationScreen() {
     loadPredictions();
   }, []);
 
-  // Auto-refresh when screen becomes active
-  useFocusEffect(
-    React.useCallback(() => {
-      loadPredictions();
-    }, [])
-  );
-
   const onRefresh = async () => {
     setRefreshing(true);
     await loadPredictions();
@@ -50,16 +42,16 @@ export default function FreeAccumulationScreen() {
     <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* Header with Back Button */}
       <View style={styles.header}>
-        <Pressable style={styles.backButton} onPress={() => router.push('/free')}>
+        <Pressable style={styles.backButton} onPress={() => router.back()}>
           <MaterialIcons name="arrow-back" size={24} color={theme.colors.textPrimary} />
         </Pressable>
         <View style={styles.headerContent}>
           <Text style={styles.title}>Accumulator - Free</Text>
           <Text style={styles.subtitle}>Combined bets for higher returns</Text>
         </View>
-        <Pressable style={styles.refreshButton} onPress={onRefresh}>
-          <MaterialIcons name="refresh" size={24} color={theme.colors.textPrimary} />
-        </Pressable>
+        <View style={styles.headerRight}>
+          <MaterialIcons name="auto-awesome" size={24} color={theme.colors.primary} />
+        </View>
       </View>
 
       <ScrollView
@@ -127,13 +119,7 @@ const styles = StyleSheet.create({
     fontSize: theme.fontSize.xs,
     color: theme.colors.textMuted,
   },
-  refreshButton: {
-    width: 40,
-    height: 40,
-    borderRadius: theme.borderRadius.md,
-    backgroundColor: theme.colors.surfaceLight,
-    alignItems: 'center',
-    justifyContent: 'center',
+  headerRight: {
     marginLeft: theme.spacing.sm,
   },
   content: {

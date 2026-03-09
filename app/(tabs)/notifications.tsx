@@ -6,7 +6,6 @@ import { theme } from '@/constants/theme';
 import { notificationsService, Notification } from '@/services/notifications';
 import { useAlert } from '@/template';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useFocusEffect } from '@react-navigation/native';
 
 export default function NotificationsScreen() {
   const { showAlert } = useAlert();
@@ -29,13 +28,6 @@ export default function NotificationsScreen() {
   useEffect(() => {
     loadNotifications();
   }, []);
-
-  // Auto-refresh when screen becomes active
-  useFocusEffect(
-    React.useCallback(() => {
-      loadNotifications();
-    }, [])
-  );
 
   const onRefresh = async () => {
     setRefreshing(true);
