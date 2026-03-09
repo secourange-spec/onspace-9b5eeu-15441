@@ -25,7 +25,6 @@
         "backgroundColor": "#1E40AF"
       },
       "package": "com.moddess.tips",
-      "googleServicesFile": "./google-services.json",
       "permissions": [
         "android.permission.RECEIVE_BOOT_COMPLETED",
         "android.permission.VIBRATE",
@@ -47,10 +46,7 @@
           "sounds": [],
           "mode": "production"
         }
-      ],
-      "expo-linear-gradient",
-      "@react-native-async-storage/async-storage",
-      "expo-constants"
+      ]
     ],
     "experiments": {
       "typedRoutes": true
