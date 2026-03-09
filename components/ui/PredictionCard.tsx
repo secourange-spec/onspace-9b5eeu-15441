@@ -1,4 +1,4 @@
-// MODDESS TIPS - Enhanced Professional Prediction Card
+// MODDESS TIPS - Enhanced Professional Prediction Card (VIP Badge + Blue Theme)
 import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -31,17 +31,20 @@ export default function PredictionCard({ prediction, isVip = false, onPress }: P
     lost: 'Lost',
   };
 
+  // Auto-detect VIP from category
+  const isVipPrediction = prediction.category === 'vip' || isVip;
+
   return (
     <Pressable
       style={({ pressed }) => [
         styles.container,
         pressed && styles.pressed,
-        isVip && styles.containerVip,
+        isVipPrediction && styles.containerVip,
       ]}
       onPress={onPress}
     >
       {/* VIP Top Border */}
-      {isVip && (
+      {isVipPrediction && (
         <LinearGradient
           colors={[theme.colors.vipGradientStart, theme.colors.vipGradientEnd]}
           start={{ x: 0, y: 0 }}
@@ -64,9 +67,9 @@ export default function PredictionCard({ prediction, isVip = false, onPress }: P
           
           {/* VIP Badge + Status */}
           <View style={styles.headerRight}>
-            {isVip && (
+            {isVipPrediction && (
               <View style={styles.vipBadge}>
-                <MaterialIcons name="workspace-premium" size={12} color="#000" />
+                <MaterialIcons name="workspace-premium" size={12} color="#FFF" />
                 <Text style={styles.vipBadgeText}>VIP</Text>
               </View>
             )}
@@ -135,16 +138,16 @@ export default function PredictionCard({ prediction, isVip = false, onPress }: P
           
           {prediction.confidence && (
             <View style={styles.footerItem}>
-              <MaterialIcons name="star" size={14} color={theme.colors.warning} />
+              <MaterialIcons name="star" size={14} color={theme.colors.adviceBlue} />
               <Text style={styles.footerText}>{prediction.confidence}</Text>
             </View>
           )}
         </View>
 
-        {/* Advice */}
+        {/* Advice - BLUE color (NO ORANGE) */}
         {prediction.advice && (
           <View style={styles.adviceContainer}>
-            <MaterialIcons name="lightbulb-outline" size={16} color={theme.colors.warning} />
+            <MaterialIcons name="lightbulb-outline" size={16} color={theme.colors.adviceBlue} />
             <Text style={styles.advice} numberOfLines={2}>{prediction.advice}</Text>
           </View>
         )}
@@ -219,7 +222,7 @@ const styles = StyleSheet.create({
   vipBadgeText: {
     fontSize: theme.fontSize.xs,
     fontWeight: theme.fontWeight.bold,
-    color: '#000',
+    color: '#FFF',
   },
   statusBadge: {
     flexDirection: 'row',
@@ -326,13 +329,14 @@ const styles = StyleSheet.create({
     gap: 6,
     marginTop: theme.spacing.xs,
     borderLeftWidth: 3,
-    borderLeftColor: theme.colors.warning,
+    borderLeftColor: theme.colors.adviceBlue,
   },
   advice: {
     flex: 1,
     fontSize: theme.fontSize.sm,
-    color: theme.colors.textSecondary,
+    color: theme.colors.adviceBlue,
     fontStyle: 'italic',
     lineHeight: 18,
+    fontWeight: theme.fontWeight.medium,
   },
 });

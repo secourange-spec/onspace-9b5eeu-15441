@@ -1,11 +1,10 @@
-// MODDESS TIPS - Free Categories (English)
+// MODDESS TIPS - Free Predictions (Improved Icons)
 import React from 'react';
-import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { theme } from '@/constants/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { LinearGradient } from 'expo-linear-gradient';
 
 export default function FreeScreen() {
   const insets = useSafeAreaInsets();
@@ -15,17 +14,17 @@ export default function FreeScreen() {
     {
       id: 'cote_2_free',
       title: 'Odds 2',
-      description: 'Predictions with odds around 2.00',
-      icon: 'emoji-events',
-      route: '/(tabs)/free-cote2',
+      description: 'Low-risk predictions with solid odds',
+      icon: 'verified',
+      route: '/free-cote2',
       color: '#3B82F6',
     },
     {
       id: 'accumulation_free',
       title: 'Accumulator',
-      description: 'Combined bets with high odds',
-      icon: 'layers',
-      route: '/(tabs)/free-accumulation',
+      description: 'Combined bets for higher returns',
+      icon: 'auto-awesome',
+      route: '/free-accumulation',
       color: '#8B5CF6',
     },
   ];
@@ -36,12 +35,9 @@ export default function FreeScreen() {
       <View style={styles.header}>
         <View>
           <Text style={styles.title}>Free Predictions</Text>
-          <Text style={styles.subtitle}>Free access for everyone</Text>
+          <Text style={styles.subtitle}>Professional betting tips</Text>
         </View>
-        <View style={styles.freeBadge}>
-          <MaterialIcons name="lock-open" size={20} color={theme.colors.success} />
-          <Text style={styles.freeBadgeText}>FREE</Text>
-        </View>
+        <MaterialIcons name="emoji-events" size={24} color={theme.colors.success} />
       </View>
 
       <ScrollView
@@ -69,28 +65,16 @@ export default function FreeScreen() {
           </Pressable>
         ))}
 
-        {/* VIP Upgrade Banner */}
-        <Pressable
-          style={styles.upgradeCard}
-          onPress={() => router.push('/vip-pricing')}
-        >
-          <LinearGradient
-            colors={[theme.colors.vipGradientStart, theme.colors.vipGradientEnd]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.upgradeGradient}
-          >
-            <MaterialIcons name="workspace-premium" size={48} color="#FFF" />
-            <Text style={styles.upgradeTitle}>Upgrade to VIP</Text>
-            <Text style={styles.upgradeDescription}>
-              Unlock 4 exclusive VIP categories with premium predictions
+        {/* Info Card */}
+        <View style={styles.infoCard}>
+          <MaterialIcons name="info" size={24} color={theme.colors.info} />
+          <View style={styles.infoTextContainer}>
+            <Text style={styles.infoTitle}>Free Access</Text>
+            <Text style={styles.infoText}>
+              Enjoy quality predictions at no cost. Upgrade to VIP for premium content with higher success rates.
             </Text>
-            <View style={styles.upgradeButton}>
-              <Text style={styles.upgradeButtonText}>View Plans</Text>
-              <MaterialIcons name="arrow-forward" size={18} color="#FFF" />
-            </View>
-          </LinearGradient>
-        </Pressable>
+          </View>
+        </View>
       </ScrollView>
     </View>
   );
@@ -120,20 +104,6 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: theme.fontSize.sm,
     color: theme.colors.textMuted,
-  },
-  freeBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: theme.colors.success + '15',
-    paddingHorizontal: theme.spacing.sm,
-    paddingVertical: 6,
-    borderRadius: theme.borderRadius.full,
-  },
-  freeBadgeText: {
-    fontSize: theme.fontSize.xs,
-    fontWeight: theme.fontWeight.bold,
-    color: theme.colors.success,
   },
   content: {
     flex: 1,
@@ -177,44 +147,28 @@ const styles = StyleSheet.create({
     fontSize: theme.fontSize.sm,
     color: theme.colors.textSecondary,
   },
-  upgradeCard: {
-    marginTop: theme.spacing.md,
-    borderRadius: theme.borderRadius.xl,
-    overflow: 'hidden',
-    ...theme.shadows.gold,
-  },
-  upgradeGradient: {
-    padding: theme.spacing.xl,
-    alignItems: 'center',
-  },
-  upgradeTitle: {
-    fontSize: theme.fontSize.xl,
-    fontWeight: theme.fontWeight.bold,
-    color: '#FFF',
-    marginTop: theme.spacing.sm,
-    marginBottom: theme.spacing.xs,
-  },
-  upgradeDescription: {
-    fontSize: theme.fontSize.sm,
-    color: '#FFF',
-    opacity: 0.95,
-    textAlign: 'center',
-    marginBottom: theme.spacing.md,
-  },
-  upgradeButton: {
+  infoCard: {
     flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    paddingHorizontal: theme.spacing.md,
-    paddingVertical: theme.spacing.sm,
-    borderRadius: theme.borderRadius.full,
-    gap: 4,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
+    backgroundColor: theme.colors.surfaceLight,
+    borderRadius: theme.borderRadius.lg,
+    padding: theme.spacing.md,
+    marginTop: theme.spacing.sm,
+    gap: theme.spacing.md,
+    borderLeftWidth: 4,
+    borderLeftColor: theme.colors.info,
   },
-  upgradeButtonText: {
+  infoTextContainer: {
+    flex: 1,
+  },
+  infoTitle: {
+    fontSize: theme.fontSize.md,
+    fontWeight: theme.fontWeight.semibold,
+    color: theme.colors.textPrimary,
+    marginBottom: 4,
+  },
+  infoText: {
     fontSize: theme.fontSize.sm,
-    fontWeight: theme.fontWeight.bold,
-    color: '#FFF',
+    color: theme.colors.textSecondary,
+    lineHeight: 20,
   },
 });

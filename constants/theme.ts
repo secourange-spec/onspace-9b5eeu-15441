@@ -19,17 +19,19 @@ export const theme = {
     vipBlue: '#3B82F6',             // VIP blue
     vipGradientStart: '#1E40AF',    // Gradient start
     vipGradientEnd: '#3B82F6',      // Gradient end
+    freeGray: '#64748B',            // Free category gray
     
     // Semantic colors
     success: '#10B981',             // Green
     error: '#EF4444',               // Red
-    warning: '#F59E0B',             // Orange
+    warning: '#3B82F6',             // Blue (NO ORANGE)
     info: '#3B82F6',                // Blue
     
     // UI colors
     border: '#E2E8F0',              // Light border
     overlay: 'rgba(0, 0, 0, 0.5)',  // Dark overlay
     badge: '#DC2626',               // Red badge for notifications
+    adviceBlue: '#1E40AF',          // Blue for advice text (NO ORANGE)
   },
   
   spacing: {

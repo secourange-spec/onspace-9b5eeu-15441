@@ -1,4 +1,4 @@
-// MODDESS TIPS - History Screen (English)
+// MODDESS TIPS - History Screen (Improved Icons)
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -16,13 +16,13 @@ export default function HistoryScreen() {
     {
       id: 'cote_2_free',
       title: 'Odds 2',
-      icon: 'emoji-events',
+      icon: 'verified',
       color: '#3B82F6',
     },
     {
       id: 'accumulation_free',
       title: 'Accumulator',
-      icon: 'layers',
+      icon: 'auto-awesome',
       color: '#8B5CF6',
     },
   ];
@@ -31,20 +31,20 @@ export default function HistoryScreen() {
     {
       id: 'cote_2_vip',
       title: 'Odds 2 VIP',
-      icon: 'stars',
-      color: '#F59E0B',
+      icon: 'verified-user',
+      color: '#3B82F6',
     },
     {
       id: 'cote_5_vip',
       title: 'Odds 5 VIP',
-      icon: 'workspace-premium',
-      color: '#EF4444',
+      icon: 'stars',
+      color: '#8B5CF6',
     },
     {
       id: 'score_exact_vip',
       title: 'Correct Score',
-      icon: 'scoreboard',
-      color: '#8B5CF6',
+      icon: 'sports-score',
+      color: '#EF4444',
     },
     {
       id: 'ht_ft_vip',
