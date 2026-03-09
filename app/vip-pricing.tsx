@@ -12,7 +12,7 @@ export default function VipPricingScreen() {
 
   const handlePricingPress = (planId: string, duration: string, price: number) => {
     const message = encodeURIComponent(
-      `Hello admin, I would like to subscribe to the VIP offer for ${duration} ($${price})`
+      `Hello leader, I am here for a VIP subscription to the ${duration} plan ($${price})`
     );
     Linking.openURL(`${APP_CONFIG.telegram.admin}?text=${message}`);
   };
