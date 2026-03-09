@@ -50,7 +50,7 @@ export default function VipScoreScreen() {
     <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* Header with Back Button */}
       <View style={styles.header}>
-        <Pressable style={styles.backButton} onPress={() => router.back()}>
+        <Pressable style={styles.backButton} onPress={() => router.push('/(tabs)/vip')}>
           <MaterialIcons name="arrow-back" size={24} color="#FFF" />
         </Pressable>
         <View style={styles.headerContent}>
