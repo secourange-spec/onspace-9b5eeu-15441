@@ -4,8 +4,8 @@ export const APP_CONFIG = {
   version: '2.0.0',
   
   telegram: {
-    admin: 'https://t.me/moddess_admin',
-    channel: 'https://t.me/moddess_tips',
+    admin: 'https://t.me/moddesstips',
+    channel: 'https://t.me/+EBiGK5As8NQ1MjI0',
   },
   
   vipPricing: [
@@ -24,10 +24,10 @@ export const APP_CONFIG = {
       popular: true,
     },
     {
-      id: 'year',
-      duration: '1 Year',
+      id: '3months',
+      duration: '3 Months',
       price: 80,
-      days: 365,
+      days: 90,
       popular: false,
     },
   ],
