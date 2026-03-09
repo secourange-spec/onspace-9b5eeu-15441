@@ -12,7 +12,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 
 export default function ProfileScreen() {
-  const { profile, isVip, loading } = useUser();
+  const { profile, isVip, loading, refreshProfile } = useUser();
   const { logout } = useAuth();
   const insets = useSafeAreaInsets();
   const router = useRouter();
@@ -45,7 +45,7 @@ export default function ProfileScreen() {
       <View style={[styles.container, { paddingTop: insets.top, justifyContent: 'center', alignItems: 'center' }]}>
         <MaterialIcons name="error-outline" size={48} color={theme.colors.error} />
         <Text style={styles.loadingText}>Failed to load profile</Text>
-        <Pressable style={styles.retryButton} onPress={() => window.location.reload()}>
+        <Pressable style={styles.retryButton} onPress={refreshProfile}>
           <Text style={styles.retryText}>Retry</Text>
         </Pressable>
       </View>
