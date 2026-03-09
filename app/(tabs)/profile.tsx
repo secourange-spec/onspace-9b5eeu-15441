@@ -1,5 +1,5 @@
 // MODDESS TIPS - Profile Screen (FIXED)
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable, Linking } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { theme } from '@/constants/theme';
@@ -16,6 +16,11 @@ export default function ProfileScreen() {
   const { logout } = useAuth();
   const insets = useSafeAreaInsets();
   const router = useRouter();
+
+  // Force reload profile when screen appears
+  useEffect(() => {
+    refreshProfile();
+  }, []);
 
   const handleLogout = async () => {
     await logout();

@@ -24,13 +24,10 @@ export const usersService = {
       if (!targetUserId) {
         const { data: { user }, error: authError } = await supabase.auth.getUser();
         if (authError || !user) {
-          console.error('[usersService] ❌ No authenticated user:', authError?.message);
           return { data: null, error: 'Non authentifié' };
         }
         targetUserId = user.id;
       }
-
-      console.log('[usersService] 🔍 Fetching profile for userId:', targetUserId);
 
       // Try to fetch the profile
       const { data, error } = await supabase
@@ -40,33 +37,17 @@ export const usersService = {
         .maybeSingle();
       
       if (error) {
-        console.error('[usersService] ❌ Database error:', {
-          message: error.message,
-          code: error.code,
-          details: error.details,
-          hint: error.hint
-        });
         return { data: null, error: error.message };
       }
       
       // Profile exists - return it
       if (data) {
-        console.log('[usersService] ✅ Profile loaded successfully:', {
-          email: data.email,
-          username: data.username,
-          role: data.role,
-          vip: data.vip_status
-        });
         return { data, error: null };
       }
       
       // Profile doesn't exist - this shouldn't happen with triggers, but handle it
-      console.warn('[usersService] ⚠️ Profile not found, trigger may have failed');
-      console.log('[usersService] 🔧 Attempting to create profile manually...');
-      
       const { data: { user: authUser } } = await supabase.auth.getUser();
       if (!authUser) {
-        console.error('[usersService] ❌ Cannot create profile - no auth user');
         return { data: null, error: 'Session invalide' };
       }
 
@@ -84,19 +65,12 @@ export const usersService = {
         .single();
       
       if (insertError) {
-        console.error('[usersService] ❌ Failed to create profile:', {
-          message: insertError.message,
-          code: insertError.code,
-          details: insertError.details
-        });
         return { data: null, error: `Erreur création profil: ${insertError.message}` };
       }
       
-      console.log('[usersService] ✅ Profile created successfully:', newProfile.email);
       return { data: newProfile, error: null };
       
     } catch (error: any) {
-      console.error('[usersService] ❌ Unexpected exception:', error);
       return { data: null, error: `Erreur inattendue: ${error.message}` };
     }
   },
