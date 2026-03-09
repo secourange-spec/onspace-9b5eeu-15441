@@ -4,8 +4,8 @@ export const APP_CONFIG = {
   version: '2.0.0',
   
   telegram: {
-    admin: 'https://t.me/moddess_admin',
-    channel: 'https://t.me/moddess_tips',
+    admin: 'https://t.me/moddesstips',
+    channel: 'https://t.me/+EBiGK5As8NQ1MjI0',
   },
   
   vipPricing: [
