@@ -22,9 +22,21 @@ export function UserProvider({ children }: { children: ReactNode }) {
   const registerPushNotifications = async () => {
     if (!user?.id) return;
 
-    const { token } = await pushNotificationsService.registerForPushNotifications();
-    if (token) {
-      await pushNotificationsService.savePushToken(user.id, token);
+    try {
+      // Request permission and get push token
+      const { token, error } = await pushNotificationsService.registerForPushNotifications();
+      
+      if (error) {
+        // Permission denied or error - silently fail (user can enable later in settings)
+        return;
+      }
+      
+      if (token) {
+        // Save token to database
+        await pushNotificationsService.savePushToken(user.id, token);
+      }
+    } catch (error) {
+      // Silently fail - push notifications are optional
     }
   };
 
