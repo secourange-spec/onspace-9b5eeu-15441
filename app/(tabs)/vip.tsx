@@ -34,7 +34,7 @@ export default function VipScreen() {
       id: 'score_exact_vip',
       title: 'Correct Score',
       description: 'Precise score predictions',
-      icon: 'sports-score',
+      icon: 'my-location',
       route: '/vip-score',
       color: '#EF4444',
     },

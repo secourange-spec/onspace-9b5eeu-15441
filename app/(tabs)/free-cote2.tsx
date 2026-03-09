@@ -1,4 +1,4 @@
-// MODDESS TIPS - Free Odds 2 Category (With Back Button)
+// MODDESS TIPS - Free Odds 2 Category (Fixed Navigation + Auto-Refresh)
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, RefreshControl, Pressable } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -8,6 +8,7 @@ import { predictionsService, Prediction } from '@/services/predictions';
 import { useAlert } from '@/template';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
 
 export default function FreeCote2Screen() {
   const { showAlert } = useAlert();
@@ -32,6 +33,13 @@ export default function FreeCote2Screen() {
     loadPredictions();
   }, []);
 
+  // Auto-refresh when screen becomes active
+  useFocusEffect(
+    React.useCallback(() => {
+      loadPredictions();
+    }, [])
+  );
+
   const onRefresh = async () => {
     setRefreshing(true);
     await loadPredictions();
@@ -42,16 +50,16 @@ export default function FreeCote2Screen() {
     <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* Header with Back Button */}
       <View style={styles.header}>
-        <Pressable style={styles.backButton} onPress={() => router.back()}>
+        <Pressable style={styles.backButton} onPress={() => router.push('/free')}>
           <MaterialIcons name="arrow-back" size={24} color={theme.colors.textPrimary} />
         </Pressable>
         <View style={styles.headerContent}>
           <Text style={styles.title}>Odds 2 - Free</Text>
           <Text style={styles.subtitle}>Safe predictions ~2.00</Text>
         </View>
-        <View style={styles.headerRight}>
-          <MaterialIcons name="verified" size={24} color={theme.colors.success} />
-        </View>
+        <Pressable style={styles.refreshButton} onPress={onRefresh}>
+          <MaterialIcons name="refresh" size={24} color={theme.colors.textPrimary} />
+        </Pressable>
       </View>
 
       <ScrollView
@@ -119,7 +127,13 @@ const styles = StyleSheet.create({
     fontSize: theme.fontSize.xs,
     color: theme.colors.textMuted,
   },
-  headerRight: {
+  refreshButton: {
+    width: 40,
+    height: 40,
+    borderRadius: theme.borderRadius.md,
+    backgroundColor: theme.colors.surfaceLight,
+    alignItems: 'center',
+    justifyContent: 'center',
     marginLeft: theme.spacing.sm,
   },
   content: {
