@@ -30,11 +30,24 @@ export default function ProfileScreen() {
     : null;
 
   // Loading state
-  if (loading || !profile) {
+  if (loading) {
     return (
       <View style={[styles.container, { paddingTop: insets.top, justifyContent: 'center', alignItems: 'center' }]}>
         <MaterialIcons name="hourglass-empty" size={48} color={theme.colors.textMuted} />
         <Text style={styles.loadingText}>Loading profile...</Text>
+      </View>
+    );
+  }
+
+  // Error state (no profile loaded)
+  if (!profile) {
+    return (
+      <View style={[styles.container, { paddingTop: insets.top, justifyContent: 'center', alignItems: 'center' }]}>
+        <MaterialIcons name="error-outline" size={48} color={theme.colors.error} />
+        <Text style={styles.loadingText}>Failed to load profile</Text>
+        <Pressable style={styles.retryButton} onPress={() => window.location.reload()}>
+          <Text style={styles.retryText}>Retry</Text>
+        </Pressable>
       </View>
     );
   }
@@ -313,5 +326,17 @@ const styles = StyleSheet.create({
     fontSize: theme.fontSize.md,
     fontWeight: theme.fontWeight.semibold,
     color: theme.colors.error,
+  },
+  retryButton: {
+    marginTop: theme.spacing.md,
+    backgroundColor: theme.colors.primary,
+    paddingHorizontal: theme.spacing.lg,
+    paddingVertical: theme.spacing.sm,
+    borderRadius: theme.borderRadius.md,
+  },
+  retryText: {
+    fontSize: theme.fontSize.sm,
+    fontWeight: theme.fontWeight.semibold,
+    color: '#FFF',
   },
 });

@@ -55,10 +55,10 @@ export function UserProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // Watch for auth user changes
+  // Watch for auth user ID changes only (not full user object)
   useEffect(() => {
     loadProfile();
-  }, [user]);
+  }, [user?.id]);
 
   const isVip = profile ? usersService.isVipActive(profile) : false;
   const isAdmin = profile?.role === 'admin';
