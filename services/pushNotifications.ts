@@ -78,25 +78,21 @@ export const pushNotificationsService = {
     }
   },
 
-  // Send push notification to all users (admin only - will be sent via backend)
+  // Send push notification to all users (admin only - via Edge Function)
   async sendPushToAll(title: string, body: string, data?: any): Promise<{ error: string | null }> {
     try {
-      // This will be handled by Edge Function to send push notifications
-      // For now, we'll store it as a regular notification
-      // The Edge Function will pick up these notifications and send push via Expo's servers
-      
-      const { error } = await supabase.rpc('send_push_notification_to_all', {
-        notification_title: title,
-        notification_body: body,
-        notification_data: data || {},
+      const { data: responseData, error } = await supabase.functions.invoke('send-push-notification', {
+        body: {
+          title,
+          message: body,
+          data: data || {},
+        },
       });
 
       if (error) throw error;
       return { error: null };
     } catch (error: any) {
-      // If RPC doesn't exist, fall back to regular notification
-      console.warn('Push notification RPC not available, using regular notifications');
-      return { error: null };
+      return { error: error.message };
     }
   },
 
