@@ -1,232 +1,196 @@
-// MODDESS TIPS - Professional Profile Screen v2.0
+// MODDESS TIPS - Profile Screen (FIXED v2)
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, Linking, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, Linking, ActivityIndicator } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { theme } from '@/constants/theme';
 import { APP_CONFIG } from '@/constants/config';
 import { useUser } from '@/hooks/useUser';
 import { useAuth } from '@/template';
+import { VipBadge } from '@/components';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  
+  // Wrap hooks in try-catch
+  let profile = null;
+  let isVip = false;
+  let loading = true;
+  let refreshProfile = async () => {};
+  let logout = async () => {};
+  
+  try {
+    const userHook = useUser();
+    profile = userHook.profile;
+    isVip = userHook.isVip;
+    loading = userHook.loading;
+    refreshProfile = userHook.refreshProfile;
+    
+    const authHook = useAuth();
+    logout = authHook.logout;
+  } catch (err: any) {
+    setError(`Hook error: ${err.message}`);
+  }
 
-  // Get user data
-  const { profile, isVip, loading, refreshProfile } = useUser();
-  const { logout } = useAuth();
-
-  // Refresh profile when screen appears
+  // Force reload profile when screen appears
   useEffect(() => {
-    const refresh = async () => {
-      setIsRefreshing(true);
-      await refreshProfile();
-      setIsRefreshing(false);
-    };
-    refresh();
+    refreshProfile();
   }, []);
 
   const handleLogout = async () => {
-    Alert.alert(
-      'Logout',
-      'Are you sure you want to logout?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Logout',
-          style: 'destructive',
-          onPress: async () => {
-            await logout();
-          },
-        },
-      ]
-    );
+    await logout();
   };
 
-  const handleContactAdmin = () => {
-    Linking.openURL(APP_CONFIG.telegram.admin);
-  };
-
-  const handleJoinChannel = () => {
-    Linking.openURL(APP_CONFIG.telegram.channel);
-  };
-
-  const handleUpgrade = () => {
-    router.push('/vip-pricing');
-  };
-
-  // Calculate VIP expiration
   const vipExpireDate = profile?.vip_expire_date
     ? new Date(profile.vip_expire_date).toLocaleDateString('en-US', {
-        day: 'numeric',
-        month: 'short',
+        day: '2-digit',
+        month: 'long',
         year: 'numeric',
       })
     : null;
 
-  const memberSince = profile?.created_at
-    ? new Date(profile.created_at).toLocaleDateString('en-US', {
-        month: 'short',
-        year: 'numeric',
-      })
-    : '-';
+  // Error state
+  if (error) {
+    return (
+      <View style={[styles.container, { paddingTop: insets.top, justifyContent: 'center', alignItems: 'center', padding: 20 }]}>
+        <MaterialIcons name="error-outline" size={48} color={theme.colors.error} />
+        <Text style={styles.loadingText}>Error</Text>
+        <Text style={[styles.loadingText, { fontSize: 12, marginTop: 10 }]}>{error}</Text>
+      </View>
+    );
+  }
 
   // Loading state
-  if (loading || isRefreshing) {
+  if (loading) {
     return (
-      <View style={[styles.container, styles.centerContent, { paddingTop: insets.top }]}>
+      <View style={[styles.container, { paddingTop: insets.top, justifyContent: 'center', alignItems: 'center' }]}>
         <ActivityIndicator size="large" color={theme.colors.primary} />
         <Text style={styles.loadingText}>Loading profile...</Text>
       </View>
     );
   }
 
-  // Error state (no profile)
+  // No profile state
   if (!profile) {
     return (
-      <View style={[styles.container, styles.centerContent, { paddingTop: insets.top }]}>
-        <MaterialIcons name="error-outline" size={64} color={theme.colors.error} />
-        <Text style={styles.errorTitle}>Profile Not Found</Text>
-        <Text style={styles.errorSubtitle}>Unable to load your profile</Text>
+      <View style={[styles.container, { paddingTop: insets.top, justifyContent: 'center', alignItems: 'center' }]}>
+        <MaterialIcons name="error-outline" size={48} color={theme.colors.error} />
+        <Text style={styles.loadingText}>Failed to load profile</Text>
         <Pressable style={styles.retryButton} onPress={refreshProfile}>
-          <Text style={styles.retryButtonText}>Retry</Text>
+          <Text style={styles.retryText}>Retry</Text>
         </Pressable>
       </View>
     );
   }
 
-  // Success state - Show profile
   return (
     <ScrollView
       style={[styles.container, { paddingTop: insets.top }]}
-      contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 20 }]}
-      showsVerticalScrollIndicator={false}
+      contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 20 }]}
     >
       {/* Header Card */}
-      <View style={[styles.headerCard, isVip && styles.headerCardVip]}>
-        <View style={[styles.avatarCircle, isVip && styles.avatarCircleVip]}>
-          <MaterialIcons name="person" size={48} color={isVip ? '#FFF' : theme.colors.primary} />
+      <LinearGradient
+        colors={isVip ? [theme.colors.vipGradientStart, theme.colors.vipGradientEnd] : [theme.colors.surfaceLight, theme.colors.surface]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.profileCard}
+      >
+        <View style={styles.avatarContainer}>
+          <MaterialIcons name="person" size={48} color={isVip ? '#000' : theme.colors.textPrimary} />
         </View>
-        
-        <Text style={[styles.userName, isVip && styles.userNameVip]}>
+        <Text style={[styles.username, isVip && styles.usernameVip]}>
           {profile.username || profile.email.split('@')[0] || 'User'}
         </Text>
-        
-        <Text style={[styles.userEmail, isVip && styles.userEmailVip]}>
-          {profile.email}
-        </Text>
-
-        {/* Status Badge */}
-        <View style={[styles.statusBadge, isVip && styles.statusBadgeVip]}>
-          <MaterialIcons 
-            name={isVip ? 'workspace-premium' : 'person-outline'} 
-            size={16} 
-            color={isVip ? '#FFF' : theme.colors.textMuted} 
-          />
-          <Text style={[styles.statusText, isVip && styles.statusTextVip]}>
-            {isVip ? 'VIP Member' : 'Free Member'}
-          </Text>
+        <Text style={[styles.email, isVip && styles.emailVip]}>{profile.email}</Text>
+        <View style={styles.badgeContainer}>
+          <VipBadge isVip={isVip} size="large" />
         </View>
-
-        {/* VIP Expiration */}
         {isVip && vipExpireDate && (
-          <Text style={styles.vipExpiration}>Valid until {vipExpireDate}</Text>
+          <Text style={styles.vipExpire}>Expires on {vipExpireDate}</Text>
         )}
-      </View>
+      </LinearGradient>
 
-      {/* VIP Upgrade Banner (FREE users only) */}
+      {/* VIP Upgrade (FREE users only) */}
       {!isVip && (
         <Pressable
-          style={({ pressed }) => [styles.upgradeCard, pressed && styles.upgradeCardPressed]}
-          onPress={handleUpgrade}
+          style={styles.upgradeButton}
+          onPress={() => router.push('/vip-pricing')}
         >
-          <View style={styles.upgradeIcon}>
-            <MaterialIcons name="workspace-premium" size={32} color={theme.colors.primary} />
-          </View>
-          <View style={styles.upgradeContent}>
-            <Text style={styles.upgradeTitle}>Upgrade to VIP</Text>
-            <Text style={styles.upgradeSubtitle}>Unlock exclusive predictions</Text>
-          </View>
-          <MaterialIcons name="arrow-forward-ios" size={20} color={theme.colors.textMuted} />
+          <LinearGradient
+            colors={[theme.colors.vipGradientStart, theme.colors.vipGradientEnd]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.upgradeGradient}
+          >
+            <MaterialIcons name="workspace-premium" size={24} color="#000" />
+            <Text style={styles.upgradeText}>Upgrade to VIP</Text>
+            <MaterialIcons name="arrow-forward" size={20} color="#000" />
+          </LinearGradient>
         </Pressable>
       )}
 
-      {/* Account Info */}
+      {/* Links Section */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Account Information</Text>
-        
-        <View style={styles.infoCard}>
-          <View style={styles.infoRow}>
-            <View style={styles.infoLeft}>
-              <MaterialIcons name="email" size={20} color={theme.colors.textMuted} />
-              <Text style={styles.infoLabel}>Email</Text>
-            </View>
-            <Text style={styles.infoValue} numberOfLines={1}>
-              {profile.email}
-            </Text>
-          </View>
-
-          <View style={styles.divider} />
-
-          <View style={styles.infoRow}>
-            <View style={styles.infoLeft}>
-              <MaterialIcons name="calendar-today" size={20} color={theme.colors.textMuted} />
-              <Text style={styles.infoLabel}>Member Since</Text>
-            </View>
-            <Text style={styles.infoValue}>{memberSince}</Text>
-          </View>
-
-          <View style={styles.divider} />
-
-          <View style={styles.infoRow}>
-            <View style={styles.infoLeft}>
-              <MaterialIcons 
-                name={isVip ? 'verified' : 'verified-user'} 
-                size={20} 
-                color={isVip ? theme.colors.primary : theme.colors.textMuted} 
-              />
-              <Text style={styles.infoLabel}>Status</Text>
-            </View>
-            <Text style={[styles.infoValue, isVip && styles.infoValueVip]}>
-              {isVip ? 'VIP' : 'Free'}
-            </Text>
-          </View>
-        </View>
-      </View>
-
-      {/* Quick Links */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Support & Community</Text>
+        <Text style={styles.sectionTitle}>Links</Text>
         
         <Pressable
-          style={({ pressed }) => [styles.linkCard, pressed && styles.linkCardPressed]}
-          onPress={handleContactAdmin}
+          style={styles.linkCard}
+          onPress={() => Linking.openURL(APP_CONFIG.telegram.admin)}
         >
-          <View style={[styles.linkIcon, { backgroundColor: theme.colors.primary + '15' }]}>
-            <MaterialIcons name="support-agent" size={24} color={theme.colors.primary} />
+          <View style={[styles.linkIcon, { backgroundColor: theme.colors.info + '20' }]}>
+            <MaterialIcons name="support-agent" size={24} color={theme.colors.info} />
           </View>
           <View style={styles.linkContent}>
             <Text style={styles.linkTitle}>Contact Admin</Text>
-            <Text style={styles.linkSubtitle}>VIP subscriptions & support</Text>
+            <Text style={styles.linkSubtitle}>Support & VIP subscription</Text>
           </View>
           <MaterialIcons name="open-in-new" size={20} color={theme.colors.textMuted} />
         </Pressable>
 
         <Pressable
-          style={({ pressed }) => [styles.linkCard, pressed && styles.linkCardPressed]}
-          onPress={handleJoinChannel}
+          style={styles.linkCard}
+          onPress={() => Linking.openURL(APP_CONFIG.telegram.channel)}
         >
-          <View style={[styles.linkIcon, { backgroundColor: theme.colors.info + '15' }]}>
-            <MaterialIcons name="groups" size={24} color={theme.colors.info} />
+          <View style={[styles.linkIcon, { backgroundColor: theme.colors.primary + '20' }]}>
+            <MaterialIcons name="groups" size={24} color={theme.colors.primary} />
           </View>
           <View style={styles.linkContent}>
             <Text style={styles.linkTitle}>Official Channel</Text>
-            <Text style={styles.linkSubtitle}>Join our community</Text>
+            <Text style={styles.linkSubtitle}>Join the community</Text>
           </View>
           <MaterialIcons name="open-in-new" size={20} color={theme.colors.textMuted} />
         </Pressable>
+      </View>
+
+      {/* Account Section */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Account</Text>
+        
+        <View style={styles.infoCard}>
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>Status</Text>
+            <VipBadge isVip={isVip} size="small" />
+          </View>
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>Email</Text>
+            <Text style={styles.infoValue} numberOfLines={1}>{profile.email}</Text>
+          </View>
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>Member since</Text>
+            <Text style={styles.infoValue}>
+              {profile.created_at
+                ? new Date(profile.created_at).toLocaleDateString('en-US', {
+                    month: 'long',
+                    year: 'numeric',
+                  })
+                : '-'}
+            </Text>
+          </View>
+        </View>
       </View>
 
       {/* Logout Button */}
@@ -237,9 +201,6 @@ export default function ProfileScreen() {
         <MaterialIcons name="logout" size={20} color={theme.colors.error} />
         <Text style={styles.logoutText}>Logout</Text>
       </Pressable>
-
-      {/* App Version */}
-      <Text style={styles.versionText}>Version {APP_CONFIG.version}</Text>
     </ScrollView>
   );
 }
@@ -249,230 +210,93 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: theme.colors.background,
   },
-  centerContent: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: theme.spacing.xl,
-  },
-  scrollContent: {
+  content: {
     padding: theme.spacing.md,
+    gap: theme.spacing.md,
   },
-  
-  // Loading & Error states
   loadingText: {
-    marginTop: theme.spacing.md,
     fontSize: theme.fontSize.md,
     color: theme.colors.textMuted,
+    marginTop: theme.spacing.sm,
   },
-  errorTitle: {
-    marginTop: theme.spacing.md,
-    fontSize: theme.fontSize.xl,
-    fontWeight: theme.fontWeight.bold,
-    color: theme.colors.textPrimary,
-  },
-  errorSubtitle: {
-    marginTop: theme.spacing.xs,
-    fontSize: theme.fontSize.sm,
-    color: theme.colors.textMuted,
-  },
-  retryButton: {
-    marginTop: theme.spacing.lg,
-    backgroundColor: theme.colors.primary,
-    paddingHorizontal: theme.spacing.xl,
-    paddingVertical: theme.spacing.sm,
-    borderRadius: theme.borderRadius.full,
-  },
-  retryButtonText: {
-    fontSize: theme.fontSize.md,
-    fontWeight: theme.fontWeight.semibold,
-    color: '#FFF',
-  },
-
-  // Header Card
-  headerCard: {
-    backgroundColor: theme.colors.surface,
+  profileCard: {
     borderRadius: theme.borderRadius.xl,
     padding: theme.spacing.xl,
     alignItems: 'center',
-    marginBottom: theme.spacing.md,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    ...theme.shadows.medium,
+    ...theme.shadows.large,
   },
-  headerCardVip: {
-    backgroundColor: theme.colors.primary,
-    borderColor: theme.colors.primaryDark,
-    ...theme.shadows.blue,
-  },
-  avatarCircle: {
+  avatarContainer: {
     width: 96,
     height: 96,
     borderRadius: 48,
-    backgroundColor: theme.colors.surfaceLight,
+    backgroundColor: 'rgba(255,255,255,0.2)',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: theme.spacing.md,
-    borderWidth: 3,
-    borderColor: theme.colors.border,
   },
-  avatarCircleVip: {
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    borderColor: 'rgba(255, 255, 255, 0.3)',
-  },
-  userName: {
+  username: {
     fontSize: theme.fontSize.xxl,
     fontWeight: theme.fontWeight.bold,
     color: theme.colors.textPrimary,
     marginBottom: theme.spacing.xs,
   },
-  userNameVip: {
-    color: '#FFF',
+  usernameVip: {
+    color: '#000',
   },
-  userEmail: {
+  email: {
     fontSize: theme.fontSize.sm,
-    color: theme.colors.textMuted,
+    color: theme.colors.textSecondary,
     marginBottom: theme.spacing.md,
   },
-  userEmailVip: {
-    color: 'rgba(255, 255, 255, 0.9)',
+  emailVip: {
+    color: '#000',
+    opacity: 0.8,
   },
-  statusBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: theme.colors.surfaceLight,
-    paddingHorizontal: theme.spacing.md,
-    paddingVertical: 8,
-    borderRadius: theme.borderRadius.full,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
+  badgeContainer: {
+    marginBottom: theme.spacing.xs,
   },
-  statusBadgeVip: {
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    borderColor: 'rgba(255, 255, 255, 0.3)',
-  },
-  statusText: {
-    fontSize: theme.fontSize.sm,
-    fontWeight: theme.fontWeight.semibold,
-    color: theme.colors.textMuted,
-  },
-  statusTextVip: {
-    color: '#FFF',
-  },
-  vipExpiration: {
-    marginTop: theme.spacing.sm,
+  vipExpire: {
     fontSize: theme.fontSize.xs,
-    color: 'rgba(255, 255, 255, 0.8)',
-  },
-
-  // Upgrade Card
-  upgradeCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: theme.colors.surface,
-    borderRadius: theme.borderRadius.lg,
-    padding: theme.spacing.md,
-    marginBottom: theme.spacing.md,
-    borderWidth: 2,
-    borderColor: theme.colors.primary,
-    ...theme.shadows.blue,
-  },
-  upgradeCardPressed: {
+    color: '#000',
     opacity: 0.7,
-    transform: [{ scale: 0.98 }],
   },
-  upgradeIcon: {
-    width: 56,
-    height: 56,
-    borderRadius: theme.borderRadius.md,
-    backgroundColor: theme.colors.primary + '15',
+  upgradeButton: {
+    borderRadius: theme.borderRadius.lg,
+    overflow: 'hidden',
+    ...theme.shadows.medium,
+  },
+  upgradeGradient: {
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: theme.spacing.md,
+    padding: theme.spacing.md,
+    gap: theme.spacing.sm,
   },
-  upgradeContent: {
-    flex: 1,
-  },
-  upgradeTitle: {
-    fontSize: theme.fontSize.lg,
-    fontWeight: theme.fontWeight.bold,
-    color: theme.colors.primary,
-    marginBottom: 2,
-  },
-  upgradeSubtitle: {
-    fontSize: theme.fontSize.sm,
-    color: theme.colors.textMuted,
-  },
-
-  // Section
-  section: {
-    marginBottom: theme.spacing.lg,
-  },
-  sectionTitle: {
+  upgradeText: {
     fontSize: theme.fontSize.md,
     fontWeight: theme.fontWeight.bold,
-    color: theme.colors.textSecondary,
-    marginBottom: theme.spacing.sm,
-    paddingHorizontal: theme.spacing.xs,
-  },
-
-  // Info Card
-  infoCard: {
-    backgroundColor: theme.colors.surface,
-    borderRadius: theme.borderRadius.lg,
-    padding: theme.spacing.md,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    ...theme.shadows.small,
-  },
-  infoRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: theme.spacing.sm,
-  },
-  infoLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: theme.spacing.sm,
+    color: '#000',
     flex: 1,
   },
-  infoLabel: {
-    fontSize: theme.fontSize.sm,
-    color: theme.colors.textSecondary,
+  section: {
+    gap: theme.spacing.sm,
   },
-  infoValue: {
-    fontSize: theme.fontSize.sm,
-    fontWeight: theme.fontWeight.medium,
-    color: theme.colors.textPrimary,
-    maxWidth: '50%',
-    textAlign: 'right',
-  },
-  infoValueVip: {
-    color: theme.colors.primary,
+  sectionTitle: {
+    fontSize: theme.fontSize.lg,
     fontWeight: theme.fontWeight.bold,
+    color: theme.colors.textPrimary,
+    paddingHorizontal: theme.spacing.xs,
   },
-  divider: {
-    height: 1,
-    backgroundColor: theme.colors.border,
-    marginVertical: theme.spacing.xs,
-  },
-
-  // Link Cards
   linkCard: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: theme.colors.surface,
     borderRadius: theme.borderRadius.lg,
     padding: theme.spacing.md,
-    marginBottom: theme.spacing.sm,
+    gap: theme.spacing.sm,
     borderWidth: 1,
     borderColor: theme.colors.border,
     ...theme.shadows.small,
-  },
-  linkCardPressed: {
-    opacity: 0.7,
-    transform: [{ scale: 0.98 }],
   },
   linkIcon: {
     width: 48,
@@ -480,7 +304,6 @@ const styles = StyleSheet.create({
     borderRadius: theme.borderRadius.md,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: theme.spacing.sm,
   },
   linkContent: {
     flex: 1,
@@ -489,14 +312,37 @@ const styles = StyleSheet.create({
     fontSize: theme.fontSize.md,
     fontWeight: theme.fontWeight.semibold,
     color: theme.colors.textPrimary,
-    marginBottom: 2,
   },
   linkSubtitle: {
     fontSize: theme.fontSize.sm,
     color: theme.colors.textMuted,
   },
-
-  // Logout Button
+  infoCard: {
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.borderRadius.lg,
+    padding: theme.spacing.md,
+    gap: theme.spacing.sm,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    ...theme.shadows.small,
+  },
+  infoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: theme.spacing.xs,
+  },
+  infoLabel: {
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.textMuted,
+  },
+  infoValue: {
+    fontSize: theme.fontSize.sm,
+    fontWeight: theme.fontWeight.medium,
+    color: theme.colors.textPrimary,
+    maxWidth: '60%',
+    textAlign: 'right',
+  },
   logoutButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -505,25 +351,27 @@ const styles = StyleSheet.create({
     borderRadius: theme.borderRadius.lg,
     padding: theme.spacing.md,
     gap: theme.spacing.sm,
-    marginTop: theme.spacing.md,
     borderWidth: 1,
     borderColor: theme.colors.error + '40',
   },
   logoutButtonPressed: {
     opacity: 0.7,
-    transform: [{ scale: 0.98 }],
   },
   logoutText: {
     fontSize: theme.fontSize.md,
     fontWeight: theme.fontWeight.semibold,
     color: theme.colors.error,
   },
-
-  // Version
-  versionText: {
-    marginTop: theme.spacing.lg,
-    fontSize: theme.fontSize.xs,
-    color: theme.colors.textMuted,
-    textAlign: 'center',
+  retryButton: {
+    marginTop: theme.spacing.md,
+    backgroundColor: theme.colors.primary,
+    paddingHorizontal: theme.spacing.lg,
+    paddingVertical: theme.spacing.sm,
+    borderRadius: theme.borderRadius.md,
+  },
+  retryText: {
+    fontSize: theme.fontSize.sm,
+    fontWeight: theme.fontWeight.semibold,
+    color: '#FFF',
   },
 });
